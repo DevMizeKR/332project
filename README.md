@@ -22,7 +22,7 @@ Project Repository of Team Indigo for POSTECH CSED332 Lecture
 2. Git Branch Naming
     - `main` : 기본 Branch
     - `docs` : 문서 작업 Branch
-    - `Assn[Assn_num]` : 각 과제를 작업하는 Branch
+    - `feat/[feat_name]` : 각 기능을 작업하는 Branch
 
 ## :people_hugging: Authors
 
