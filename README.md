@@ -30,4 +30,4 @@ Project Repository of Team Indigo for POSTECH CSED332 Lecture
   
 ## :books: Documentation
 
-- [Weekly Report](./Weekly-Report/)
+- [Weekly Report](./Weekly%20Report/)
