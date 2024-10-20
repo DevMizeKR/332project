@@ -8,7 +8,7 @@
 
 ### ldm0902
 
-Sorting Algorithm 관련 조사: <https://www.notion.so/Sorting-Algorithm-124f77d7c97e80449839fa339cf39c19?pvs=4>
+* Research about Sorting Algorithm: <https://www.notion.so/Sorting-Algorithm-124f77d7c97e80449839fa339cf39c19?pvs=4>
 
 ## Goal of the next week
 
@@ -17,3 +17,7 @@ Sorting Algorithm 관련 조사: <https://www.notion.so/Sorting-Algorithm-124f77
 ### 2nter21
 
 * Research and Understand about Distributed Sorting
+
+### ldm0902
+
+* Primitive Design (tentative)
