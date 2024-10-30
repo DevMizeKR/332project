@@ -9,6 +9,8 @@ Project Repository of Team Indigo for POSTECH CSED332 Lecture
   - **Scala**  ```2.11.11```
   - **sbt**  ```1.10.1```
   - **Scala IDE for Eclipse**  ```4.7.0```
+2. 자료 공유 툴
+  - [**Notion Page**](https://sly-look-d40.notion.site/SD-Project-124f77d7c97e8011a6cbef480b7c2a03?pvs=4) 
 
 ## :hammer_and_wrench: Git Convention
 1. Commit / Pull Request
