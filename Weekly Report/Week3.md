@@ -8,9 +8,11 @@
  * Researched about gRPC
  * Set Basic Scala Project Files
 ### ldm0902
- * 
+ * Change on Notion (Now public access available)
+ * Researched about File I/O, sampling algorithm
+ * Draw Structure Design
 ### 2nter21
- * Researced about steps of distributed sorting, and some details of each steps
+ * Researched about steps of distributed sorting, and some details of each steps
 
 ## Goal of the next week
 
@@ -20,4 +22,4 @@
 ### 2nter21
  * Design how to partition datas and then shuffle
 ### ldm0902
- * 
+ * Write Pseudo Code of Sorting Phase & Merging Phase
