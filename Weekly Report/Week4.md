@@ -5,6 +5,8 @@
  * discuss some unclear processes of distributed sorting
    
 ### DevMizeKR
+ * Understand how to use gensort.exe and valsort.exe
+ * Researched how to use gRPC and encode / decode to ProtoBuf
 
 ### ldm0902
  * Draw Structure Design
@@ -17,9 +19,11 @@
 
 ## Goal of the next week (Individual)
 ### DevMizeKR
+ * Setting Basic Scala Project & gRPC (Failed on this week)
+ * Master - (Network) - Worker Flow Design
 
 ### 2nter21
  * start to write detailed code of sampling and partitioning
 
 ### ldm0902
- * Write Pseudo code of worker 
+ * Write Pseudo code of worker
