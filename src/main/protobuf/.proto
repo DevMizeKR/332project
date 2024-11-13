@@ -1,0 +1,14 @@
+syntax = "proto3";
+package project332;
+
+message RequestMessage {
+  string name = 1;
+}
+
+message ResponseMessage {
+  string message = 1;
+}
+
+service ExampleService {
+  rpc SayHello(RequestMessage) returns (ResponseMessage);
+}
