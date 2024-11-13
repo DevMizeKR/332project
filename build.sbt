@@ -1,6 +1,6 @@
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
-ThisBuild / scalaVersion := "2.13.0"
+ThisBuild / scalaVersion := "3.5.2"
 
 lazy val root = (project in file("."))
   .settings(
@@ -11,5 +11,6 @@ libraryDependencies += "io.grpc" % "grpc-netty" % "1.65.1"
 libraryDependencies += "io.grpc" % "grpc-protobuf" % "1.65.1"
 libraryDependencies += "io.grpc" % "grpc-stub" % "1.64.0"
 
-addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.0")
-libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.15"
+Compile / PB.targets := Seq(
+  scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
+)

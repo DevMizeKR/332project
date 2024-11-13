@@ -6,7 +6,7 @@ Project Repository of Team Indigo for POSTECH CSED332 Lecture
 ## :sparkles: Development Environment
 1. 개발환경
   - **JDK**  ```22```
-  - **Scala**  ```2.13.0```
+  - **Scala**  ```3.5.2```
   - **sbt**  ```1.10.5```
 2. 자료 공유 툴
   - [**Notion Page**](https://sly-look-d40.notion.site/SD-Project-124f77d7c97e8011a6cbef480b7c2a03?pvs=4) 
