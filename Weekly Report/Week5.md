@@ -14,6 +14,9 @@
  * Re-draw Structure Flow
 
 ### 2nter21
+ * write detailed analysis of worker
+   * partitioning
+   * shuffling (progressing...)
 
 ## Goal of the next week
  * Progress Presentation
@@ -22,6 +25,7 @@
 ### DevMizeKR
 
 ### 2nter21
+ * write datailed analysis of other functions of worker
 
 ### ldm0902
  * Write pseudo code
