@@ -4,6 +4,7 @@
   * Fix the misunderstood parts of distributed sort : order of sorting phase
   
 ### DevMizeKR
+  * Tried to Implement Sample gRPC Communication Code & Test on SSH
 
 ### ldm0902
   * Get familiar with project structure (directory)
@@ -18,6 +19,7 @@
 
 ## Goal of the next week (Individual)
 ### DevMizeKR
+ * Implement gRPC Communication
 
 ### ldm0902
  * Write the basic code of master & worker
