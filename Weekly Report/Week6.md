@@ -1,7 +1,8 @@
-# Week 5 Report
+# Week 6 Report
 
 ## Progress in the week
-   
+  * Fix the misunderstood parts of distributed sort : order of sorting phase
+  
 ### DevMizeKR
 
 ### ldm0902
@@ -9,7 +10,8 @@
   * Implementing the basic code of master
     
 ### 2nter21
-
+  * Understand how distributed computing works - complie code, upload file to each machines and run separately
+  * Implement the test code to generate input using gensort and copy to each workers
 
 ## Goal of the next week
  * Implementation
@@ -21,4 +23,5 @@
  * Write the basic code of master & worker
    
 ### 2nter21
- * write datailed analysis of other functions of worker
+ * Implement the functions of worker
+ * Implement the test code that check if the sorted result is correct
