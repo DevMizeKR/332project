@@ -7,6 +7,8 @@ lazy val root = (project in file("."))
     name := "332project"
   )
 
+enablePlugins(JavaAppPackaging)
+
 libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
 libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion
 libraryDependencies += "io.grpc" % "grpc-netty" % "1.65.1"
