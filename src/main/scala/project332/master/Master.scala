@@ -1,7 +1,6 @@
 package project332.master
 
 import com.typesafe.scalalogging.LazyLogging
-import java.net.InetSocketAddress
 import io.grpc.{Server, ServerBuilder}
 import scala.concurrent.{ExecutionContext, Future}
 import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage}
@@ -11,6 +10,7 @@ object Master extends LazyLogging {
   private val port = 50051
 
   def main(args: Array[String]): Unit = {
+    Master.logger.info(s"Server started")
     val server = new Master(ExecutionContext.global)
     server.start()
     server.blockUntilShutdown()
