@@ -1,6 +1,7 @@
 package project332.master
 
 import com.typesafe.scalalogging.LazyLogging
+import java.net.InetSocketAddress
 import io.grpc.{Server, ServerBuilder}
 import scala.concurrent.{ExecutionContext, Future}
 import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage}
@@ -21,11 +22,9 @@ class Master(executionContext: ExecutionContext) extends LazyLogging {
 
   // 서버 시작
   def start(): Unit = {
-    server = ServerBuilder
-      .forPort(Master.port)
+    server = ServerBuilder.forAddress(new InetSocketAddress("127.0.0.1", Master.port))
       .addService(ExampleServiceGrpc.bindService(new ExampleServiceImpl, executionContext))
-      .build
-      .start()
+      .build.start()
 
     Master.logger.info(s"Server started, listening on ${Master.port}")
 
