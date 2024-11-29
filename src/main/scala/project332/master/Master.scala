@@ -22,9 +22,11 @@ class Master(executionContext: ExecutionContext) extends LazyLogging {
 
   // 서버 시작
   def start(): Unit = {
-    server = ServerBuilder.forAddress(new InetSocketAddress("127.0.0.1", Master.port))
-      .addService(ExampleServiceGrpc.bindService(new ExampleServiceImpl, executionContext))
-      .build.start()
+    server = ServerBuilder
+      .forPort(50051) // 포트 지정
+      .addService(ExampleServiceGrpc.bindService(new ExampleServiceImpl, ExecutionContext.global))
+      .build
+      .start()
 
     Master.logger.info(s"Server started, listening on ${Master.port}")
 

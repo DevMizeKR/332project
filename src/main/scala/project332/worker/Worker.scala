@@ -15,7 +15,7 @@ object Worker {
   }
 
   def main(args: Array[String]): Unit = {
-    val client = Worker("localhost", 50051)
+    val client = Worker("127.0.0.1", 50051)
     try {
       val user = args.headOption.getOrElse("world")
       client.greet(user)

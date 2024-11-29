@@ -13,7 +13,7 @@ libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.com
 libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapb.compiler.Version.scalapbVersion
 libraryDependencies += "io.grpc" % "grpc-netty" % "1.65.1"
 libraryDependencies += "io.grpc" % "grpc-protobuf" % "1.65.1"
-libraryDependencies += "io.grpc" % "grpc-stub" % "1.64.0"
+libraryDependencies += "io.grpc" % "grpc-stub" % "1.65.1"
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.6"
 
