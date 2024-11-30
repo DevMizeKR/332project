@@ -15,48 +15,49 @@ service ExampleService {
 
 //////////////////////////////////////////////////////////////////////////
 service SortingService {
-  rpc SetShufflingServerPort (SetShufflingServerPortRequest) returns (SetShufflingServerPortResponse) {}
-  rpc SendNumFiles (SendNumFilesRequest) returns (SendNumFilesResponse) {}
-  rpc NotifyMergingCompleted (NotifyMergingCompletedRequest) returns (NotifyMergingCompletedResponse) {}
+  rpc SetShufflingServer (SetShufflingServerRequest) returns (SetShufflingServerResponse) {}
+  rpc ShufflingCompleted ( ShufflingCompletedRequest) returns ( ShufflingCompletedResponse) {}
+  rpc MergingCompleted (MergingCompletedRequest) returns (MergingCompletedResponse) {}
 }
 
-message SetShufflingServerPortRequest {
+message SetShufflingServerRequest {
   int32 id = 1;
   int32 port = 2;
 }
 
 message SetShufflingServerPortResponse {
-  bool ok = 1;
-  map<int32, string> id_to_server_endpoint = 2;
+  bool success = 1;
+  map<int32, string> idToServerEndpoint = 2;
 }
 
-message SendNumFilesRequest {
+message  ShufflingCompletedRequest {
   int32 id = 1;
   int32 num = 2;
 }
 
-message SendNumFilesResponse {
-  bool ok = 1;
+message  ShufflingCompletedResponse {
+  bool  success = 1;
   int32 startIndex = 2;
   int32 length = 3;
 }
 
-message NotifyMergingCompletedRequest {
+message MergingCompletedRequest {
   int32 id = 1;
 }
 
-message NotifyMergingCompletedResponse {
-  bool ok = 1;
+message MergingCompletedResponse {
+  bool  success = 1;
 }
 
-// service for Shuffling server
+//rpc for Shuffling phase
 service ShufflingService {
-  rpc SendSortedFiles (stream SendSortedFileRequest) returns (stream SendSortedFileResponse) {}
+  rpc SendFiles (stream SendFileRequest) returns (stream SendFileResponse) {}
 }
-message SendSortedFileRequest {
+
+message SendFileRequest {
   bytes file = 1;
 }
 
-message SendSortedFileResponse {
-  bool ok = 1;
+message SendFileResponse {
+  bool  success = 1;
 }

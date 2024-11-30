@@ -2,7 +2,7 @@ package project332.worker
 
 import java.util.concurrent.TimeUnit
 import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
-import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage}
+import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage, SortingServiceGrpc, SetShufflingServerRequest, SetShufflingServerPortResponse, ShufflingCompletedRequest, ShufflingCompletedResponse, ShufflingServiceGrpc, SendFileRequest, SendFileResponse}
 import com.typesafe.scalalogging.LazyLogging
 
 object Worker {
@@ -27,8 +27,72 @@ object Worker {
 
 class Worker private(
                       private val channel: ManagedChannel,
-                      private val blockingStub: ExampleServiceGrpc.ExampleServiceBlockingStub
+                      private val blockingStub: ExampleServiceGrpc.ExampleServiceBlockingStub,
+                      private val inputDirectories: Array[String],
+                      private val tempDirectory: String,
+                      private val outputDirectory: String,
                     ) extends LazyLogging {
+
+  var serverPort: Int = 0
+  var shufflingServer: Server = null
+  var idToEndpoint: Map[Int, String] = Map.empty
+
+  /////////////////////shuffling////////////////////////////
+
+
+  //candidates for Utils
+  def findAvailablePort(): Int = {
+  }
+
+  def getAllFilesOfId(id: Int): List[File]={
+    val getFiles = new File(outputDirectory)
+    getFiles
+      .listFiles()
+      .filter(_.isFile)
+      .filter(_.getName.startsWith(s"$id"))
+      .toList
+  }
+
+  //setting shuffling server
+  def startShufflingServer(): Unit={
+    this.serverPort = findAvailablePort()
+
+    shufflingServer = ServerBuilder
+      .forPort(this.serverPort)
+      .addService(shufflingServiceGrpc.bindService(new ShufflingServiceImpl, ExecutionContext.global))
+      .build
+      .start()
+  
+    logger.info(s"Shuffling Server is started at port ${this.serverPort}")
+  }
+
+  def stopShufflingServer(): Unit={
+    if (shufflingServer != null) {
+      shufflingServer.shutdown()
+      logger.info("Shuffling Server stopped.")
+    }
+  }
+
+  def handleSetShufflingServerResponse(response: SetShufflingServerResponse): Unit = {
+    this.idToEndpoint = response.idToServerEndpoint
+    logger.info(s"Endpoint: ${this.idToEndpoint}")
+  }
+
+  def setShufflingServer(): Unit={
+    val request = SetShufflingServerRequest(id = this.id, port = this.serverPort)
+    val response = stub.setShufflingServer(request)
+
+    response.onComplete {
+      case Success(r) => {
+        handleSetShufflingServerResponse(r)
+        shuffle()
+        shufflingCompleted()
+      }
+      case Failure(e) => 
+        logger.error(s"SetShufflingServer failed: $e")
+    }
+  }
+
 
   // shutdown 메서드: gRPC 채널 종료
   def shutdown(): Unit = {
@@ -47,10 +111,5 @@ class Worker private(
         logger.warn("RPC failed: " + e.getStatus)
     }
   }
-
-  //shuffling
-  def startShufflingServer(): Unit={
     
-  }
-  
 }
