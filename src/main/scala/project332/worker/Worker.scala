@@ -47,4 +47,10 @@ class Worker private(
         logger.warn("RPC failed: " + e.getStatus)
     }
   }
+
+  //shuffling
+  def startShufflingServer(): Unit={
+    
+  }
+  
 }
