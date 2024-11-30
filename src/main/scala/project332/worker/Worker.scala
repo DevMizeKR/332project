@@ -2,8 +2,14 @@ package project332.worker
 
 import java.util.concurrent.TimeUnit
 import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
+import io.grpc.stub.StreamObserver
+import com.google.protobuf.ByteString
 import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage}
 import com.typesafe.scalalogging.LazyLogging
+import java.io.File
+import scala.io.Source
+import scala.util.{Success, Failure}
+import org.apache.loggin.log4j.scala.Logging
 
 object Worker {
   def apply(host: String, port: Int): Worker = {
@@ -46,5 +52,14 @@ class Worker private(
       case e: StatusRuntimeException =>
         logger.warn("RPC failed: " + e.getStatus)
     }
+  }
+
+  def makeSample: Array[Byte] = {
+    val files = inputDirectories.map(new File(_)).flatMap(_.listFiles.filter(_.isFile))
+    val fileSources = files.map(Source.fromFile(_))
+    val groupedData = fileSources.flatMap(_.grouped(100)).take(10000)
+    val keys = groupedData.map(chunk => chunk.dropRight(90))
+    logger.info("")
+    keys.flatten.map(_.toByte).toArray
   }
 }
