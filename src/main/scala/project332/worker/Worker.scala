@@ -156,11 +156,13 @@ class Worker private(
     }
   }
 
+  ////////////merging////////////////////////
+
   def startMerging(response: ShufflingCompletedResponse): Unit = {
     assert(response.success)
     val targets = getTargetedFiles()
-    merge(targets, response.startIndex, response.length)
-    mergingCompleted()
+    //merge(targets, response.startIndex, response.length)
+    //mergingCompleted()
   }
 
   // shutdown 메서드: gRPC 채널 종료
