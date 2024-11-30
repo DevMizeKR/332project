@@ -37,10 +37,8 @@ class Worker private(
   var shufflingServer: Server = null
   var idToEndpoint: Map[Int, String] = Map.empty
 
-  /////////////////////shuffling////////////////////////////
 
-
-  //candidates for Utils
+    //candidates for Utils
   def findAvailablePort(): Int = {
   }
 
@@ -52,6 +50,29 @@ class Worker private(
       .filter(_.getName.startsWith(s"$id"))
       .toList
   }
+
+  def getNumberOfFiles: Int = {
+    val numberOfFiles = inputDirectories
+    inputDirectories
+      .map(new File(_))
+      .flatMap(_.listFiles.filter(_.isFile))
+      .size
+      //.length
+  }
+
+  def getTargetedFiles(): List[File] = {
+    val getFiles = new File(outputDirectory)
+    getFiles
+      .listFiles()
+      .filter(_.isFile())
+      .filter(_.getName.startsWith(s"${this.id}_"))
+      .toList
+  }
+
+  /////////////////////shuffling////////////////////////////
+
+
+
 
   //setting shuffling server
   def startShufflingServer(): Unit={
@@ -73,10 +94,12 @@ class Worker private(
     }
   }
 
+  /*
   def handleSetShufflingServerResponse(response: SetShufflingServerResponse): Unit = {
     this.idToEndpoint = response.idToServerEndpoint
     logger.info(s"Endpoint: ${this.idToEndpoint}")
   }
+  */
 
   def setShufflingServer(): Unit={
     val request = SetShufflingServerRequest(id = this.id, port = this.serverPort)
@@ -84,7 +107,8 @@ class Worker private(
 
     response.onComplete {
       case Success(r) => {
-        handleSetShufflingServerResponse(r)
+        this.idToEndpoint = response.idToServerEndpoint
+        logger.info(s"Endpoint: ${this.idToEndpoint}")
         shuffle()
         shufflingCompleted()
       }
@@ -93,6 +117,51 @@ class Worker private(
     }
   }
 
+  def shuffle(): Unit={
+    for((targetId, targetEndpoint) <- this.idToEndpoint.filter(_._1 != this.id)) {
+      logger.info(s"Sending files from ${this.id} to $targetId")
+      val filesToSend = getAllFilesOfId(targetId)
+
+      //TODO
+
+      logger.info(s"Finish sending files from slave id: ${this.id} to slave id: $targetId")
+    }
+  }
+
+  def saveShuffledFile(file: Array[Byte]): Unit = {
+    val filename = s"${this.outputDirectory}/${this.id}_${Random.alphanumeric.take(10).mkString}"
+    logger.info(s"save received file: $filename")
+    val outputFile = new File(filename)
+    val outputStream = new FileOutputStream(outputFile)
+    outputStream.write(file)
+    outputStream.close()
+  }
+
+  private class ShufflingImpl extends ShufflingGrpc.ShufflingService {
+    override def SendFiles(responseObserver: StreamObserver[SendFileResponse]): StreamObserver[SendFileRequest] = {
+      
+      //TODO
+
+    }
+  }
+
+   def shufflingCompleted(): Unit = {
+    val num = getNumberOfFiles()
+    val request = ShufflingCompletedRequest(id = this.id, num = num)
+    val response = stub.ShufflingCompleted(request)
+    
+    response.onComplete {
+      case Success(r) => startMerging(r)
+      case Failure(e) => logger.error(s"ShufflingCompleted failed: $s")
+    }
+  }
+
+  def startMerging(response: ShufflingCompletedResponse): Unit = {
+    assert(response.success)
+    val targets = getTargetedFiles()
+    merge(targets, response.startIndex, response.length)
+    mergingCompleted()
+  }
 
   // shutdown 메서드: gRPC 채널 종료
   def shutdown(): Unit = {
