@@ -12,3 +12,51 @@ message ResponseMessage {
 service ExampleService {
   rpc SayHello(RequestMessage) returns (ResponseMessage);
 }
+
+//////////////////////////////////////////////////////////////////////////
+service SortingService {
+  rpc SetShufflingServerPort (SetShufflingServerPortRequest) returns (SetShufflingServerPortResponse) {}
+  rpc SendNumFiles (SendNumFilesRequest) returns (SendNumFilesResponse) {}
+  rpc NotifyMergingCompleted (NotifyMergingCompletedRequest) returns (NotifyMergingCompletedResponse) {}
+}
+
+message SetShufflingServerPortRequest {
+  int32 id = 1;
+  int32 port = 2;
+}
+
+message SetShufflingServerPortResponse {
+  bool ok = 1;
+  map<int32, string> id_to_server_endpoint = 2;
+}
+
+message SendNumFilesRequest {
+  int32 id = 1;
+  int32 num = 2;
+}
+
+message SendNumFilesResponse {
+  bool ok = 1;
+  int32 startIndex = 2;
+  int32 length = 3;
+}
+
+message NotifyMergingCompletedRequest {
+  int32 id = 1;
+}
+
+message NotifyMergingCompletedResponse {
+  bool ok = 1;
+}
+
+// service for Shuffling server
+service ShufflingService {
+  rpc SendSortedFiles (stream SendSortedFileRequest) returns (stream SendSortedFileResponse) {}
+}
+message SendSortedFileRequest {
+  bytes file = 1;
+}
+
+message SendSortedFileResponse {
+  bool ok = 1;
+}
