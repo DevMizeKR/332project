@@ -15,8 +15,8 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="sbt: scala-sdk-2.13.12" level="project" />
-    <orderEntry type="library" name="sbt: ch.qos.logback:logback-classic:1.5.6:jar" level="project" />
-    <orderEntry type="library" name="sbt: ch.qos.logback:logback-core:1.5.6:jar" level="project" />
+    <orderEntry type="library" name="sbt: ch.qos.logback:logback-classic:1.2.3:jar" level="project" />
+    <orderEntry type="library" name="sbt: ch.qos.logback:logback-core:1.2.3:jar" level="project" />
     <orderEntry type="library" name="sbt: com.google.android:annotations:4.1.1.4:jar" level="project" />
     <orderEntry type="library" name="sbt: com.google.api.grpc:proto-google-common-protos:2.29.0:jar" level="project" />
     <orderEntry type="library" name="sbt: com.google.code.findbugs:jsr305:3.0.2:jar" level="project" />
@@ -37,7 +37,7 @@
     <orderEntry type="library" name="sbt: io.grpc:grpc-netty:1.65.1:jar" level="project" />
     <orderEntry type="library" name="sbt: io.grpc:grpc-protobuf-lite:1.65.1:jar" level="project" />
     <orderEntry type="library" name="sbt: io.grpc:grpc-protobuf:1.65.1:jar" level="project" />
-    <orderEntry type="library" name="sbt: io.grpc:grpc-stub:1.64.0:jar" level="project" />
+    <orderEntry type="library" name="sbt: io.grpc:grpc-stub:1.65.1:jar" level="project" />
     <orderEntry type="library" name="sbt: io.grpc:grpc-util:1.65.1:jar" level="project" />
     <orderEntry type="library" name="sbt: io.netty:netty-buffer:4.1.100.Final:jar" level="project" />
     <orderEntry type="library" name="sbt: io.netty:netty-codec-http2:4.1.100.Final:jar" level="project" />
@@ -56,6 +56,6 @@
     <orderEntry type="library" name="sbt: org.scala-lang.modules:scala-collection-compat_2.13:2.11.0:jar" level="project" />
     <orderEntry type="library" name="sbt: org.scala-lang:scala-library:2.13.12:jar" level="project" />
     <orderEntry type="library" name="sbt: org.scala-lang:scala-reflect:2.13.12:jar" level="project" />
-    <orderEntry type="library" name="sbt: org.slf4j:slf4j-api:2.0.13:jar" level="project" />
+    <orderEntry type="library" name="sbt: org.slf4j:slf4j-api:1.7.36:jar" level="project" />
   </component>
 </module>

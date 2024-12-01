@@ -4,13 +4,14 @@ import com.typesafe.scalalogging.LazyLogging
 import io.grpc.{Server, ServerBuilder}
 import scala.concurrent.{ExecutionContext, Future}
 import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage}
+import project332.connection.{ConnectionRequest, ConnectionReply, InitialConnectGrpc}
 
 object Master extends LazyLogging {
 
   private val port = 50051
 
   def main(args: Array[String]): Unit = {
-    Master.logger.info(s"Server started")
+    Master.logger.info("Server started")
     val server = new Master(ExecutionContext.global)
     server.start()
     server.blockUntilShutdown()
@@ -28,7 +29,7 @@ class Master(executionContext: ExecutionContext) extends LazyLogging {
       .build
       .start()
 
-    Master.logger.info(s"Server started, listening on ${Master.port}")
+    Master.logger.info("Server started, listening on ${Master.port}")
 
     sys.addShutdownHook {
       Master.logger.warn("*** shutting down gRPC server since JVM is shutting down")
