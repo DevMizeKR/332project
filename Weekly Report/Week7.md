@@ -11,7 +11,8 @@
 - Implementing Merging Phase
 
 ### 2nter21
-
+- Implement Sampling Phase (in status)
+- Design Detail of Phase changing, Partitioning
 
 ## Goal of the next week
 
@@ -25,3 +26,4 @@
 - Finish all assigned implements (Shuffling, Merging, ...)
 
 ### 2nter21
+- Finish Implementing Sampling Phase and Partitioning Phase
