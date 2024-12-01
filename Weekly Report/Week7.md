@@ -7,7 +7,8 @@
 - Implementing gRPC Communication between Master & Worker
 
 ### ldm0902
-
+- Implement Shuffling Phase
+- Implementing Merging Phase
 
 ### 2nter21
 
@@ -21,6 +22,6 @@
 - Finish Implementing overall gRPC Communication
 
 ### ldm0902
-
+- Finish all assigned implements (Shuffling, Merging, ...)
 
 ### 2nter21
