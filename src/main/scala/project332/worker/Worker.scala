@@ -5,6 +5,10 @@ import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
 import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage, SortingServiceGrpc, SetShufflingServerRequest, SetShufflingServerPortResponse, ShufflingCompletedRequest, ShufflingCompletedResponse, ShufflingServiceGrpc, SendFileRequest, SendFileResponse}
 import com.typesafe.scalalogging.LazyLogging
 
+import io.grpc.StreamObserver
+import java.util.concurrent.CountDownLatch
+import scala.io.Source
+
 object Worker {
   def apply(host: String, port: Int): Worker = {
     val channel = ManagedChannelBuilder.forAddress(host, port)
@@ -38,8 +42,9 @@ class Worker private(
   var idToEndpoint: Map[Int, String] = Map.empty
 
 
-    //candidates for Utils
+  //candidates for Utils
   def findAvailablePort(): Int = {
+
   }
 
   def getAllFilesOfId(id: Int): List[File]={
@@ -122,8 +127,39 @@ class Worker private(
       logger.info(s"Sending files from ${this.id} to $targetId")
       val filesToSend = getAllFilesOfId(targetId)
 
-      //TODO
+      val finishSignal = new CountDownLatch(1)
+      val sendSignal = new CountDownLatch(1)
 
+      val splittedEndpoint = endpiont.split(':')
+      val shufflingChannel = ManagedChannelBuilder
+        .forAddress(splittedEndpoint(0), splittedEndpoint(1).toInt)
+        .usePlaintext()
+        .build()
+      val shufflingStub = ShufflingServiceGrpc.stub(shufflingChannel)
+      val responseObserver = shufflingStub
+                              .sendFiles(new StreamObserver[SendFileResponse]{
+                                            override def onNext(value: SendFileResponse): Unit = sendSignal.countDown()
+                                            override def onErrror(error: Throwable): Unit = {
+                                              logger.error(s"Send files faild: $error")
+                                              finishSignal.countDown()
+                                              }
+                                            override def onCompleted(): Unit = finishSignal.countDown()
+                                          })
+
+      for (file<-filesToSend) {
+        val source = Source.fromFile(file)
+        val sourceFile = source.toList.map(x=>x.toByte).toArray
+        responseObserver.onNext(SendFileRequest(file=sourceFile))
+
+        //response came
+        source.close()
+        file.delete()
+        sendSignal.await()
+        sendSignal = new CountDownLatch(1)
+      }
+
+      responseObserver.onCompleted()
+      finishSignal.await()
       logger.info(s"Finish sending files from slave id: ${this.id} to slave id: $targetId")
     }
   }
@@ -139,9 +175,20 @@ class Worker private(
 
   private class ShufflingImpl extends ShufflingGrpc.ShufflingService {
     override def SendFiles(responseObserver: StreamObserver[SendFileResponse]): StreamObserver[SendFileRequest] = {
+      val requestObserver = new StreamObserver[SendFileRequest] {
+        override def onNext(value: SendFileRequest): Unit={
+          saveShuffledFile(value.file.toByteArray)
+          responseObserver.onNext(SendFileResponse(success = true))
+        }
+        override def onEffor(error: Throwable): Unit = {
+          logger.error(s"Response to SendFiles failed: $error")
+        }
+        override def onCompleted(): Unit = {
+          responseObserver.onCompleted()
+        }
+      }
       
-      //TODO
-
+      requestObserver
     }
   }
 
