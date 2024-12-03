@@ -5,6 +5,7 @@ import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
 import io.grpc.stub.StreamObserver
 import com.google.protobuf.ByteString
 import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage}
+import project332.example.{SamplingGrpc, SampleSendRequest, SampleSendReply}
 import com.typesafe.scalalogging.LazyLogging
 import java.io.File
 import scala.io.Source
@@ -61,5 +62,18 @@ class Worker private(
     val keys = groupedData.map(chunk => chunk.dropRight(90))
     logger.info("")
     keys.flatten.map(_.toByte).toArray
+  }
+
+  def sendSample(data: Array[Byte]) : Unit = {
+    val request = SampleSendRequest(id = this.id, data = ByteString.copyFrom(data))
+    logger.info("")
+    val response = stub.sendSample(request)
+    response.onComplete {
+      case Success(value) => {
+        handleSendSampleResponse(value)
+        
+      }
+      case Failure(exception) => logger.error("")
+    }
   }
 }
