@@ -256,22 +256,22 @@ object KeyComparator extends Comparator[String] {
 
   
   /////////////candidates for utils?///
-  def splitFile(largeFile: File, sizeOfNewFile: Int, startIndex: Int): Int = {
-    var indexOfFile: Int = startIndex
+  def splitFile(largeFile: File, newFileSize: Int, startIndex: Int): Int = {
+    var fileIdx: Int = startIndex
     try {
       val in: InputStream = Files.newInputStream(largeFile.toPath())
-      val buffer: Array[Byte] = new Array[Byte](sizeOfNewFile);
-      var dataRead: Int = in.read(buffer, 0, sizeOfNewFile);
+      val buffer: Array[Byte] = new Array[Byte](newFileSize);
+      var dataRead: Int = in.read(buffer, 0, newFileSize);
       while (dataRead > -1) {
-        createNewFile(indexOfFile, buffer)
-        indexOfFile += 1;
-        dataRead = in.read(buffer, 0, sizeOfNewFile);
+        createNewFile(fileIdx, buffer)
+        fileIdx += 1;
+        dataRead = in.read(buffer, 0, newFileSize);
       }
     } catch {
       case e: IOException => logger.error(s"fail to splitFile: ${e.toString}")
     }
 
-    indexOfFile
+    fileIdx
   }
 
   def createNewFile(index: Int, buffer: Array[Byte]): Unit = {
