@@ -2,12 +2,15 @@ package project332.worker
 
 import java.util.concurrent.TimeUnit
 import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
-import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage, SortingServiceGrpc, SetShufflingServerRequest, SetShufflingServerPortResponse, ShufflingCompletedRequest, ShufflingCompletedResponse, ShufflingServiceGrpc, SendFileRequest, SendFileResponse}
+import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage, SortingServiceGrpc, SetShufflingServerRequest, SetShufflingServerPortResponse, ShufflingCompletedRequest, ShufflingCompletedResponse, ShufflingServiceGrpc, SendFileRequest, SendFileResponse, MergingCompletedRequest, MergingCompletedResponse}
 import com.typesafe.scalalogging.LazyLogging
 
 import io.grpc.StreamObserver
 import java.util.concurrent.CountDownLatch
 import scala.io.Source
+import com.google.protobuf.ByteString
+
+import com.google.code.externalsorting.ExternalSort
 
 object Worker {
   def apply(host: String, port: Int): Worker = {
@@ -73,6 +76,19 @@ class Worker private(
       .filter(_.getName.startsWith(s"${this.id}_"))
       .toList
   }
+
+object KeyComparator extends Comparator[String] {
+  override def compare(a: String, b: String): Int = {
+    assert(a.length == b.length)
+    val a_key: Array[Byte] = a.take(10).map(c => c.toByte).toArray
+    val b_key: Array[Byte] = b.take(10).map(c => c.toByte).toArray
+    for (i <- 0 to 9) {
+      if (a_key(i) > b_key(i)) return 1
+      if (a_key(i) < b_key(i)) return -1
+    }
+    return 0
+  }
+}
 
   /////////////////////shuffling////////////////////////////
 
@@ -187,7 +203,7 @@ class Worker private(
           responseObserver.onCompleted()
         }
       }
-      
+
       requestObserver
     }
   }
@@ -208,8 +224,96 @@ class Worker private(
   def startMerging(response: ShufflingCompletedResponse): Unit = {
     assert(response.success)
     val targets = getTargetedFiles()
-    //merge(targets, response.startIndex, response.length)
-    //mergingCompleted()
+    merge(targets, response.startIndex, response.length)
+    mergingCompleted()
+  }
+
+  def merge(files: List[File], startIndex: Int, length: Int): Any = {
+    val filename = s"${this.outputDirectory}/singleMergedFile"
+    val outputFile = new File(filename)
+
+    //Use externalsort
+    val singleMergedFile = ExternalSort.mergeSortedFiles(files.asJava, outputFile, KeyComparator, Charset.forName("US-ASCII"))
+
+    val lastIndex = splitFile(outputFile, getSizeInBytes(outputFile.length(), length), startIndex)
+    outputFile.delete()
+    addCarriageReturn()
+    logger.info("Merge finished.")
+  }
+
+  def mergingCompleted(): Unit = {
+    val request = MergingCompletedRequest(id = this.id)
+    val response= MergingCompletedResponse(request)
+
+    response.onComplete{
+      case Success(value) => {
+        assert(value.success)
+        //TODO: implement flag about all phases finished
+      }
+      case Failure(e) => logger.error(s"Merging faild: $e")
+    }
+  }
+
+  
+  /////////////candidates for utils?///
+  def splitFile(largeFile: File, sizeOfNewFile: Int, startIndex: Int): Int = {
+    var indexOfFile: Int = startIndex
+    try {
+      val in: InputStream = Files.newInputStream(largeFile.toPath())
+      val buffer: Array[Byte] = new Array[Byte](sizeOfNewFile);
+      var dataRead: Int = in.read(buffer, 0, sizeOfNewFile);
+      while (dataRead > -1) {
+        createNewFile(indexOfFile, buffer)
+        indexOfFile += 1;
+        dataRead = in.read(buffer, 0, sizeOfNewFile);
+      }
+    } catch {
+      case e: IOException => logger.error(s"fail to splitFile: ${e.toString}")
+    }
+
+    indexOfFile
+  }
+
+  def createNewFile(index: Int, buffer: Array[Byte]): Unit = {
+    val sortedFile: File = new File(s"$outputDirectory/pre_partition.${index}")
+    try {
+      val output: FileOutputStream = new FileOutputStream(sortedFile)
+      output.write(buffer)
+    } catch {
+      case e: IOException => logger.error(s"fail to create File: ${e.toString}")
+    }
+  }
+
+  def getSizeInBytes(totalBytes: Long, numberOfFiles: Int): Int = {
+    var temp = totalBytes / 99
+    if ((totalBytes / 99) % numberOfFiles != 0) {
+      temp = (((totalBytes / 99) / numberOfFiles) + 1) * numberOfFiles
+    }
+    val x: Long = (temp / numberOfFiles) * 99
+    if (x > Integer.MAX_VALUE) {
+      throw new NumberFormatException("Byte chunk too large");
+    }
+    x.asInstanceOf[Int]
+  }
+
+  def addCarriageReturn(): Unit = {
+    val partitionedFiles = new File(outputDirectory)
+      .listFiles
+      .filter(_.isFile)
+      .filter(_.getName.startsWith("pre_partition"))
+      .toList
+    for (file <- partitionedFiles) {
+      val source = Source.fromFile(file)
+      val filename = s"${this.outputDirectory}/${file.getName.drop(4)}"
+      val newFile = new File(filename)
+      val outputStream = new FileOutputStream(newFile)
+      for (editedLine <- source.grouped(99).toList.map(line => line.patch(98, Array('\r'), 0))) {
+        outputStream.write(editedLine.map(_.toByte).toArray)
+      }
+      outputStream.close()
+      source.close()
+      file.delete()
+    }
   }
 
   // shutdown 메서드: gRPC 채널 종료
