@@ -43,6 +43,7 @@ class Worker private(
   var serverPort: Int = 0
   var shufflingServer: Server = null
   var idToEndpoint: Map[Int, String] = Map.empty
+  val completedAll: Promise[Boolean] = Promize[Boolean]()
 
 
   //candidates for Utils
@@ -248,7 +249,7 @@ object KeyComparator extends Comparator[String] {
     response.onComplete{
       case Success(value) => {
         assert(value.success)
-        //TODO: implement flag about all phases finished
+        this.completedAll.sucess(true) //should be editied when merging all implementations
       }
       case Failure(e) => logger.error(s"Merging faild: $e")
     }
