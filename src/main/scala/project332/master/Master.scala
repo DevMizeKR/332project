@@ -3,7 +3,6 @@ package project332.master
 import com.typesafe.scalalogging.LazyLogging
 import io.grpc.{Server, ServerBuilder}
 import scala.concurrent.{ExecutionContext, Future}
-import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage}
 import project332.connection.{ConnectionRequest, ConnectionReply, InitialConnectGrpc}
 
 object Master extends LazyLogging {
@@ -20,13 +19,14 @@ object Master extends LazyLogging {
 
 class Master(executionContext: ExecutionContext) extends LazyLogging {
   private[this] var server: Server = null
+  private var clients: Map[String, String] = Map()
 
   // 서버 시작
   def start(): Unit = {
     server = ServerBuilder
-      .forPort(50051) // 포트 지정
-      .addService(ExampleServiceGrpc.bindService(new ExampleServiceImpl, ExecutionContext.global))
-      .build
+      .forPort(Master.port) // 포트 지정
+      .addService(InitialConnectGrpc.bindService(new ConnectionImpl, executionContext))
+      .build()
       .start()
 
     Master.logger.info("Server started, listening on ${Master.port}")
@@ -54,15 +54,16 @@ class Master(executionContext: ExecutionContext) extends LazyLogging {
   }
 
   // gRPC 서비스 구현
-  private class ExampleServiceImpl extends ExampleServiceGrpc.ExampleService {
-    override def sayHello(req: RequestMessage): Future[ResponseMessage] = {
+  private class ConnectionImpl extends InitialConnectGrpc.InitialConnect {
+    override def makeIPConnect(req: ConnectionRequest): Future[ConnectionReply] = {
       val name = req.name
-      Master.logger.info(s"Received request with name: $name")
+      val reply = ConnectionReply(message = "Hello" + name)
 
-      val responseMessage = s"Hello, $name!"
-      Master.logger.info(s"Sending response: $responseMessage")
+      Master.logger.info(s"Connected with : $name")
+      Master.logger.info(s"IP Address : $name")
 
-      Future.successful(ResponseMessage(message = responseMessage))
+      clients = clients + (req.name -> req.ipAddress)
+      Future.successful(reply)
     }
   }
 }

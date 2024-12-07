@@ -1,8 +1,9 @@
 package project332.worker
 
 import java.util.concurrent.TimeUnit
+import java.net._
 import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
-import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage}
+import project332.connection.{ConnectionReply, ConnectionRequest, InitialConnectGrpc}
 import com.typesafe.scalalogging.LazyLogging
 
 object Worker {
@@ -10,7 +11,7 @@ object Worker {
     val channel = ManagedChannelBuilder.forAddress(host, port)
       .usePlaintext()
       .build()
-    val blockingStub = ExampleServiceGrpc.blockingStub(channel)
+    val blockingStub = InitialConnectGrpc.blockingStub(channel)
     new Worker(channel, blockingStub)
   }
 
@@ -18,7 +19,9 @@ object Worker {
     val client = Worker("127.0.0.1", 50051)
     try {
       val user = args.headOption.getOrElse("world")
-      client.greet(user)
+      val localhost: InetAddress = InetAddress.getLocalHost
+      val localIPAddress: String = localhost.getHostAddress
+      client.sendClientIP(user, localIPAddress)
     } finally {
       client.shutdown()
     }
@@ -27,7 +30,7 @@ object Worker {
 
 class Worker private(
                       private val channel: ManagedChannel,
-                      private val blockingStub: ExampleServiceGrpc.ExampleServiceBlockingStub
+                      private val blockingStub: InitialConnectGrpc.InitialConnectBlockingStub
                     ) extends LazyLogging {
 
   // shutdown 메서드: gRPC 채널 종료
@@ -36,11 +39,11 @@ class Worker private(
   }
 
   // greet 메서드: 서버로 요청을 보내고 응답을 받아오는 메서드
-  def greet(name: String): Unit = {
+  def sendClientIP(name: String, ip: String): Unit = {
     logger.info(s"Will try to greet $name ...")
-    val request = RequestMessage(name = name)
+    val request = ConnectionRequest(ipAddress = ip, name = name)
     try {
-      val response = blockingStub.sayHello(request)
+      val response = blockingStub.makeIPConnect(request)
       logger.info(s"Greeting: ${response.message}")
     } catch {
       case e: StatusRuntimeException =>
