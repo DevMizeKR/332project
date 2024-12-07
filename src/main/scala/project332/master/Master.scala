@@ -15,10 +15,9 @@ object Master extends LazyLogging {
   def main(args: Array[String]): Unit = {
     if (args.headOption.isEmpty) return
 
-    val port = args.find(arg => arg == "DEBUG").map(_ => 50051).getOrElse(randomPort)
+    val port = args.find(arg => arg == "DEBUG").map(_ => 50052).getOrElse(randomPort)
     val server = new Master(ExecutionContext.global, args.headOption.get.toInt, port)
     server.start()
-    server.printEndPoint()
     server.blockUntilShutdown()
   }
 }
@@ -26,7 +25,6 @@ object Master extends LazyLogging {
 class Master(executionContext: ExecutionContext, val numClient: Int, val port: Int) extends LazyLogging {
   private[this] var server: Server = null
   private val clientLatch: CountDownLatch = new CountDownLatch(numClient)
-  private var clients: Map[String, String] = Map()
 
   // 서버 시작
   def start(): Unit = {
@@ -35,16 +33,12 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       .build()
       .start()
 
-    Master.logger.info(s"Server started, listening on ${this.port}")
+    Master.logger.info(s"Server started at $getLocalIP : ${this.port}")
 
     sys.addShutdownHook {
       stop()
       Master.logger.warn("Server shut down")
     }
-  }
-
-  private def printEndPoint(): Unit = {
-    System.out.println(getLocalIP + " : " + this.port)
   }
 
   // 서버 종료

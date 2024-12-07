@@ -13,22 +13,22 @@ import project332.connection.{CommunicateGrpc, ConnectionRequest, ConnectionResp
 object Worker extends LazyLogging {
   def main(args: Array[String]): Unit = {
     if (args.length != 2) {
-      println("Usage: Worker <master-ip> <master-port>")
+      println("Usage: ./worker <Master-IP> <Master-Port>")
       System.exit(1)
     }
 
-    val masterIp = args(0)
+    val masterIP = args(0)
     val masterPort = args(1).toInt
 
-    val worker = new Worker(masterIp, masterPort)
+    val worker = new Worker(masterIP, masterPort)
     val done = worker.start()
     Await.result(done, Duration.Inf)
     worker.shutdown()
   }
 }
 
-class Worker(masterIp: String, masterPort: Int) extends LazyLogging {
-  private val channel: ManagedChannel = ManagedChannelBuilder.forAddress(masterIp, masterPort)
+class Worker(masterIP: String, masterPort: Int) extends LazyLogging {
+  private val channel: ManagedChannel = ManagedChannelBuilder.forAddress(masterIP, masterPort)
     .usePlaintext()
     .build()
   private val stub: CommunicateGrpc.CommunicateStub = CommunicateGrpc.stub(channel)
