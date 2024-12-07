@@ -1,9 +1,11 @@
 package project332.master
 
 import com.typesafe.scalalogging.LazyLogging
+import java.net._
 import io.grpc.{Server, ServerBuilder}
 import scala.concurrent.{ExecutionContext, Future}
 import project332.connection.{ConnectionRequest, ConnectionReply, InitialConnectGrpc}
+import project332.sorting.{SortingGrpc, SortingRequest, SortingReply}
 
 object Master extends LazyLogging {
 
@@ -14,6 +16,14 @@ object Master extends LazyLogging {
     val server = new Master(ExecutionContext.global)
     server.start()
     server.blockUntilShutdown()
+  }
+
+  def getLocalIP: String = {
+    val socket = new DatagramSocket
+    try {
+      socket.connect(InetAddress.getByName("8.8.8.8"), 10002)
+      socket.getLocalAddress.getHostAddress
+    } finally if (socket != null) socket.close()
   }
 }
 

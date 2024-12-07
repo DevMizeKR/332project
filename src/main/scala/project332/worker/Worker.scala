@@ -2,19 +2,12 @@ package project332.worker
 
 import java.util.concurrent.TimeUnit
 import java.net._
-import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
-import project332.connection.{ConnectionReply, ConnectionRequest, InitialConnectGrpc}
 import com.typesafe.scalalogging.LazyLogging
+import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
+import project332.connection.{InitialConnectGrpc, ConnectionRequest, ConnectionReply}
+import project332.sorting.{SortingGrpc, SortingRequest, SortingReply}
 
 object Worker {
-  def apply(host: String, port: Int): Worker = {
-    val channel = ManagedChannelBuilder.forAddress(host, port)
-      .usePlaintext()
-      .build()
-    val blockingStub = InitialConnectGrpc.blockingStub(channel)
-    new Worker(channel, blockingStub)
-  }
-
   def main(args: Array[String]): Unit = {
     val client = Worker("127.0.0.1", 50051)
     try {
@@ -25,6 +18,22 @@ object Worker {
     } finally {
       client.shutdown()
     }
+  }
+
+  def apply(host: String, port: Int): Worker = {
+    val channel = ManagedChannelBuilder.forAddress(host, port)
+      .usePlaintext()
+      .build()
+    val blockingStub = InitialConnectGrpc.blockingStub(channel)
+    new Worker(channel, blockingStub)
+  }
+
+  def getLocalIP: String = {
+    val socket = new DatagramSocket
+    try {
+      socket.connect(InetAddress.getByName("8.8.8.8"), 10002)
+      socket.getLocalAddress.getHostAddress
+    } finally if (socket != null) socket.close()
   }
 }
 

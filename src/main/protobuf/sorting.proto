@@ -1,0 +1,14 @@
+syntax = "proto3";
+package project332;
+
+message SortingRequest {
+  string ipAddress = 1;
+}
+
+message SortingReply {
+  bool checked = 1;
+}
+
+service Sorting {
+  rpc SortingHandshake(SortingRequest) returns (SortingReply);
+}
