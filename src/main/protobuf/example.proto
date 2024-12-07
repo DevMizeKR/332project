@@ -12,3 +12,55 @@ message ResponseMessage {
 service ExampleService {
   rpc SayHello(RequestMessage) returns (ResponseMessage);
 }
+
+service Sampling {
+  rpc SampleSend (SampleSendRequest) returns (SampleSendReply)
+}
+
+message SampleSendRequest {
+  int32 id = 1;
+  bytes data = 2;
+}
+
+message SampleSendReply {
+  message KeyRanges {
+    bytes lower_bound = 1;
+    bytes upper_bound = 2;
+  }
+  bool ok = 1;
+  map<int32, KeyRanges> id_to_key_ranges = 2;
+}
+
+// service for slave server
+service Shuffling {
+  rpc SendSortedFiles (stream SendSortedFileRequest) returns (stream SendSortedFileResponse) {}
+}
+
+message SendSortedFileRequest {
+  bytes file = 1;
+}
+
+message SendSortedFileResponse {
+  bool ok = 1;
+}
+
+// service to sampling
+service Sampling {
+  rpc SampleSend (SampleSendRequest) returns (SampleSendReply);
+}
+
+// worker send request with sample
+message SampleSendRequest {
+  int32 id = 1;
+  bytes data = 2;
+}
+
+// master send reply to sample
+message SampleSendReply {
+  message KeyRanges {
+    bytes lower_bound = 1;
+    bytes upper_bound = 2;
+  }
+  bool ok = 1;
+  map<int32, KeyRanges> id_to_key_ranges = 2;
+}
