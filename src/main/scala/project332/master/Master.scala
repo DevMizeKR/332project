@@ -1,50 +1,50 @@
 package project332.master
 
 import com.typesafe.scalalogging.LazyLogging
-import java.net._
 import java.util.concurrent.CountDownLatch
 import io.grpc.{Server, ServerBuilder}
 import scala.concurrent.{ExecutionContext, Future}
-import project332.connection.{ConnectionRequest, ConnectionReply, InitialConnectGrpc}
-import project332.sorting.{SortingGrpc, SortingRequest, SortingReply}
+
+import project332.common.Common.{findRandomPort, getLocalIP}
+import project332.connection.{CommunicateGrpc, ConnectionRequest, ConnectionResponse}
 
 object Master extends LazyLogging {
 
-  private val port = 50051
+  private val randomPort: Int = findRandomPort
 
   def main(args: Array[String]): Unit = {
-    val server = new Master(ExecutionContext.global)
-    server.start()
-    server.blockUntilShutdown()
-  }
+    if (args.headOption.isEmpty) return
 
-  def getLocalIP: String = {
-    val socket = new DatagramSocket
-    try {
-      socket.connect(InetAddress.getByName("8.8.8.8"), 10002)
-      socket.getLocalAddress.getHostAddress
-    } finally if (socket != null) socket.close()
+    val port = args.find(arg => arg == "DEBUG").map(_ => 50051).getOrElse(randomPort)
+    val server = new Master(ExecutionContext.global, args.headOption.get.toInt, port)
+    server.start()
+    server.printEndPoint()
+    server.blockUntilShutdown()
   }
 }
 
-class Master(executionContext: ExecutionContext) extends LazyLogging {
+class Master(executionContext: ExecutionContext, val numClient: Int, val port: Int) extends LazyLogging {
   private[this] var server: Server = null
+  private val clientLatch: CountDownLatch = new CountDownLatch(numClient)
   private var clients: Map[String, String] = Map()
 
   // 서버 시작
   def start(): Unit = {
-    server = ServerBuilder
-      .forPort(Master.port) // 포트 지정
-      .addService(InitialConnectGrpc.bindService(new ConnectionImpl, executionContext))
+    server = ServerBuilder.forPort(this.port)
+      .addService(CommunicateGrpc.bindService(new CommunicateImpl, executionContext))
       .build()
       .start()
 
-    Master.logger.info(s"Server started, listening on ${Master.port}")
+    Master.logger.info(s"Server started, listening on ${this.port}")
 
     sys.addShutdownHook {
       stop()
       Master.logger.warn("Server shut down")
     }
+  }
+
+  private def printEndPoint(): Unit = {
+    System.out.println(getLocalIP + " : " + this.port)
   }
 
   // 서버 종료
@@ -62,15 +62,13 @@ class Master(executionContext: ExecutionContext) extends LazyLogging {
   }
 
   // gRPC 서비스 구현
-  private class ConnectionImpl extends InitialConnectGrpc.InitialConnect {
-    override def makeIPConnect(req: ConnectionRequest) = {
-      val name = req.name
-      val reply = ConnectionReply(message = "Hello" + name)
+  private class CommunicateImpl extends CommunicateGrpc.Communicate {
+    override def connecting(req: ConnectionRequest): Future[ConnectionResponse] = {
+      Master.logger.info(s"Handshake from ${req.ipAddress}")
+      clientLatch.countDown()
+      clientLatch.await()
 
-      Master.logger.info(s"Connected with : $name")
-      Master.logger.info(s"IP Address : $name")
-
-      clients = clients + (req.name -> req.ipAddress)
+      val reply = ConnectionResponse(isConnected = true, id = clientLatch.getCount.toInt)
       Future.successful(reply)
     }
   }
