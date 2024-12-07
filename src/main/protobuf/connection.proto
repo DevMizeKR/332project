@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package project332;
+
+service Communicate {
+  rpc Connecting (ConnectionRequest) returns (ConnectionResponse) {}
+}
+
+message ConnectionRequest {
+  string ipAddress = 1;
+}
+
+message ConnectionResponse {
+  bool isConnected = 1;
+  int32 id = 2;
+}
