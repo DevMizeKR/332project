@@ -9,7 +9,7 @@ import project332.sorting.{SortingGrpc, SortingRequest, SortingReply}
 
 object Worker {
   def main(args: Array[String]): Unit = {
-    val client = Worker("localhost", 50052)
+    val client = Worker("127.0.0.1", 50052)
     try {
       val user = args.headOption.getOrElse("world")
       val localhost: InetAddress = InetAddress.getLocalHost
