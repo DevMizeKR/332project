@@ -9,7 +9,7 @@ import project332.sorting.{SortingGrpc, SortingRequest, SortingReply}
 
 object Worker {
   def main(args: Array[String]): Unit = {
-    val client = Worker("127.0.0.1", 50051)
+    val client = Worker("localhost", 50052)
     try {
       val user = args.headOption.getOrElse("world")
       val localhost: InetAddress = InetAddress.getLocalHost
@@ -21,9 +21,7 @@ object Worker {
   }
 
   def apply(host: String, port: Int): Worker = {
-    val channel = ManagedChannelBuilder.forAddress(host, port)
-      .usePlaintext()
-      .build()
+    val channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build()
     val blockingStub = InitialConnectGrpc.blockingStub(channel)
     new Worker(channel, blockingStub)
   }
@@ -47,7 +45,7 @@ class Worker private(
     channel.shutdown.awaitTermination(5, TimeUnit.SECONDS)
   }
 
-  // greet 메서드: 서버로 요청을 보내고 응답을 받아오는 메서드
+  // Send Request to Server and Get Reply
   def sendClientIP(name: String, ip: String): Unit = {
     logger.info(s"Will try to greet $name ...")
     val request = ConnectionRequest(ipAddress = ip, name = name)

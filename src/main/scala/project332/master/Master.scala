@@ -2,6 +2,7 @@ package project332.master
 
 import com.typesafe.scalalogging.LazyLogging
 import java.net._
+import java.util.concurrent.CountDownLatch
 import io.grpc.{Server, ServerBuilder}
 import scala.concurrent.{ExecutionContext, Future}
 import project332.connection.{ConnectionRequest, ConnectionReply, InitialConnectGrpc}
@@ -12,7 +13,6 @@ object Master extends LazyLogging {
   private val port = 50051
 
   def main(args: Array[String]): Unit = {
-    Master.logger.info("Server started")
     val server = new Master(ExecutionContext.global)
     server.start()
     server.blockUntilShutdown()
@@ -39,12 +39,11 @@ class Master(executionContext: ExecutionContext) extends LazyLogging {
       .build()
       .start()
 
-    Master.logger.info("Server started, listening on ${Master.port}")
+    Master.logger.info(s"Server started, listening on ${Master.port}")
 
     sys.addShutdownHook {
-      Master.logger.warn("*** shutting down gRPC server since JVM is shutting down")
       stop()
-      Master.logger.warn("*** server shut down")
+      Master.logger.warn("Server shut down")
     }
   }
 
@@ -52,7 +51,6 @@ class Master(executionContext: ExecutionContext) extends LazyLogging {
   private def stop(): Unit = {
     if (server != null) {
       server.shutdown()
-      Master.logger.info("Server stopped.")
     }
   }
 
@@ -65,7 +63,7 @@ class Master(executionContext: ExecutionContext) extends LazyLogging {
 
   // gRPC 서비스 구현
   private class ConnectionImpl extends InitialConnectGrpc.InitialConnect {
-    override def makeIPConnect(req: ConnectionRequest): Future[ConnectionReply] = {
+    override def makeIPConnect(req: ConnectionRequest) = {
       val name = req.name
       val reply = ConnectionReply(message = "Hello" + name)
 
