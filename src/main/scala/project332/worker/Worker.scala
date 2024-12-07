@@ -2,7 +2,8 @@ package project332.worker
 
 import java.util.concurrent.TimeUnit
 import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
-import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage, SortingServiceGrpc, SetShufflingServerRequest, SetShufflingServerPortResponse, ShufflingCompletedRequest, ShufflingCompletedResponse, ShufflingServiceGrpc, SendFileRequest, SendFileResponse, MergingCompletedRequest, MergingCompletedResponse}
+import project332.example.{ExampleServiceGrpc, RequestMessage, ResponseMessage}
+import project332.example.{SortingServiceGrpc, SetShufflingServerRequest, SetShufflingServerPortResponse, ShufflingCompletedRequest, ShufflingCompletedResponse, ShufflingServiceGrpc, SendFileRequest, SendFileResponse, MergingCompletedRequest, MergingCompletedResponse}
 import com.typesafe.scalalogging.LazyLogging
 
 import io.grpc.StreamObserver
@@ -177,7 +178,7 @@ object KeyComparator extends Comparator[String] {
 
       responseObserver.onCompleted()
       finishSignal.await()
-      logger.info(s"Finish sending files from slave id: ${this.id} to slave id: $targetId")
+      logger.info(s"Finish sending files from worker id: ${this.id} to worker id: $targetId")
     }
   }
 
