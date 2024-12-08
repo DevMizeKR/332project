@@ -24,7 +24,7 @@ object Worker extends LazyLogging {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.headOption.isEmpty || args.length != 1) {
+    if (args.headOption.isEmpty) {
       println("Usage: ./worker <Master IP>:<Master Port> <Input Number> <Input Directory Lists> <Output Directory>")
       System.exit(1)
     }
