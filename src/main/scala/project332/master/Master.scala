@@ -137,9 +137,8 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     }
 
     override def sampling(req: SamplingRequest): Future[SamplingResponse] = {
-      Master.logger.info(s"Data from ${req.ipAddress}")
       clientLatch.countDown()
-      addData(req.data)
+      addData(req.data.toString)
       clientLatch.await()
 
       val reply = SamplingResponse(isChecked = true, partition = pivotMapping.toMap)
