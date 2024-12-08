@@ -80,7 +80,7 @@ class Worker(private val channel: ManagedChannel,
     val fileSources = files.map(Source.fromFile(_))
     val groupedData = fileSources.flatMap(_.grouped(100)).take(10000)
     val keys = groupedData.map(chunk => chunk.dropRight(90))
-    Worker.logger.info("successfully made sample:${keys.flatten.map(_.toByte).length}")
+    Worker.logger.info(s"successfully made sample:${keys.flatten.map(_.toByte).length}")
     keys.flatten.map(_.toByte)
   }
 

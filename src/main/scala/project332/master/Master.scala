@@ -85,7 +85,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     val sortedSample = this.data.sorted(KeyOrdering)
 
     val partition: Map[Int, (Array[Byte], Array[Byte])] = Map.empty
-    if (this.workers.length == 1) {
+    if (1) {
       partition.put(workers(0).id, (mindata, maxdata))
     } else {
       val range: Int = sortedSample.length / this.workers.length
