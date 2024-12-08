@@ -90,7 +90,7 @@ class Worker(private val channel: ManagedChannel,
     val response = stub.sampling(request)
     response.onComplete {
       case Success(value) => {
-        Worker.logger.info("successfully send sample")
+        Worker.logger.info(s"successfully send sample:$data.length")
         handleSamplingResponse(value)
         //sortFilesWithKeyRanges()
         //startGrpcServer()
@@ -103,7 +103,7 @@ class Worker(private val channel: ManagedChannel,
   // handle reply from master for sending sample
   def handleSamplingResponse(response: SamplingResponse): Unit = {
     assert(response.isChecked)
-    logger.info(s"Send Sampled Data succeeded. id to key ranges: ${response.partition.map(entry => (entry._1, (entry._2.lowerbound.toByteArray.toList, entry._2.upperbound.toByteArray.toList)))}")
+    logger.info(s"received pivot: ${response.partition.map(entry => (entry._1, (entry._2.lowerbound.toByteArray.toList, entry._2.upperbound.toByteArray.toList)))}")
     this.pivotMapping = response.partition.map(x => (x._1, new KeyRange(lowerbound = x._2.lowerbound, upperbound = x._2.upperbound)))
   }
 }
