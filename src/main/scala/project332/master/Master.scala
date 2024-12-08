@@ -88,28 +88,22 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     if (this.workers.length == 1) { // slave 하나밖에 없으면 그냥 범위에 냅다 최소~최대 전부 할당  
       partition.put(workers(0).id, (mindata, maxdata))
     } else {
-      val range: Int = sortedSample.length / this.workers.length
-      val remainder: Int = sortedSample.length % this.workers.length // 나머지 계산
-
+      val range: Int = sortedKeyData.length / this.slaves.length
       var loop = 0
-      for (worker <- this.workers.toList) { //ffgfg
-        // 각 워커가 처리할 데이터의 범위 계산
-        val startIdx = loop * range + Math.min(loop, remainder) // 시작 인덱스
-        val endIdx = startIdx + range + (if (loop < remainder) 1 else 0) // 끝 인덱스
-
-        // 데이터의 시작과 끝 인덱스를 사용하여 슬레이브에 할당
+      for (slave <- this.slaves.toList) {
         if (loop == 0) {
-          val bytes = sortedSample(endIdx).clone()
+          val bytes = sortedKeyData((loop + 1) * range).clone()
           bytes.update(9, bytes(9).-(1).toByte)
-          partition.put(worker.id, (mindata, bytes))
-        } else if (loop == this.workers.length - 1) {
-          partition.put(worker.id, (sortedSample(startIdx), maxdata))
+          partition.put(slave.id, (mindata, bytes))
+        } else if (loop == this.slaves.length - 1) {
+          partition.put(slave.id, (sortedKeyData(loop * range), maxdata))
         } else {
-          val bytes = sortedSample(endIdx).clone()
+          val bytes = sortedKeyData((loop + 1) * range).clone()
           bytes.update(9, bytes(9).-(1).toByte)
-          partition.put(worker.id, (sortedSample(startIdx), bytes))
-        }
-        loop += 1
+          partition.put(slave.id, (sortedKeyData(loop * range), bytes))
+        } 
+        loop +=1
+      }
       }
     }
     this.pivotMapping = partition.map(x => (x._1, KeyRange(lowerbound = ByteString.copyFrom(x._2._1), upperbound = ByteString.copyFrom(x._2._2))))
