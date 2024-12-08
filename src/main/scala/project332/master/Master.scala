@@ -137,7 +137,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
 
     override def sampling(req: SamplingRequest): Future[SamplingResponse] = {
       clientLatch.countDown()
-      addData(req.data.toString)
+      receiveSample(req.id, req.data.toByteArray)
       clientLatch.await()
 
       val reply = SamplingResponse(isChecked = true, partition = pivotMapping.toMap)
@@ -154,7 +154,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
 
       this.data = this.data ++ sampledData.grouped(10).toList
       if (this.workers.count(_.gotSampledData) == this.numClient) {
-        logger.info("we receive all the sampled data")
+        logger.info(s"we receive all the sampled data:${this.data.length}")
         calculatePivot()
         //        transitionToSorting()
         //        transitionToShuffling()
