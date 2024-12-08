@@ -71,4 +71,37 @@ class Worker(private val channel: ManagedChannel,
       case e: StatusRuntimeException => Worker.logger.warn(s"Failed : ${e.getStatus}")
     }
   }
+
+  // make sample from files
+  def makeSample: Array[Byte] = {
+    val files = inputDirectories.map(new File(_)).flatMap(_.listFiles.filter(_.isFile))
+    val fileSources = files.map(Source.fromFile(_))
+    val groupedData = fileSources.flatMap(_.grouped(100)).take(10000)
+    val keys = groupedData.map(chunk => chunk.dropRight(90))
+    logger.info("")
+    keys.flatten.map(_.toByte).toArray
+  }
+
+  // worker send sample to master
+  def sendSample(data: Array[Byte]) : Unit = {
+    val request = SampleSendRequest(id = this.id, data = ByteString.copyFrom(data))
+    logger.info("we have send data")
+    val response = samplingStub.sampleSend(request)
+    response.onComplete {
+      case Success(value) => {
+        handleSampleSendReply(value)
+        sortFilesWithKeyRanges()
+        startGrpcServer()
+        setSlaveServerPort()
+      }
+      case Failure(exception) => logger.error(s"sendSampledData failed: ${exception}")
+    }
+  }
+
+  // handle reply from master for sending sample
+  def handleSampleSendReply(response: SampleSendReply): Unit = {
+    assert(response.ok)
+    logger.info(s"Send Sampled Data succeeded. id to key ranges: ${response.idToKeyRanges.map(entry => (entry._1, (entry._2.lowerBound.toByteArray.toList, entry._2.upperBound.toByteArray.toList)))}")
+    this.idToKeyRange = response.idToKeyRanges.map(entry => (entry._1, new KeyRange(lowerBound = entry._2.lowerBound.toByteArray, upperBound = entry._2.upperBound.toByteArray)))
+  }
 }
