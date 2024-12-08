@@ -57,7 +57,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       Master.logger.warn("Server shut down")
     }
 
-    stateTransition(ConnectingState)
+    initialTransition(ConnectingState)
   }
 
   // 서버 종료
@@ -85,6 +85,12 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       }
       return workerID
     }
+  }
+
+  private def initialTransition(nextState: State): Unit = {
+    Master.logger.info(s"Transition to $nextState.")
+    currentState = nextState
+    clientLatch = new CountDownLatch(numClient)
   }
 
   private def stateTransition(nextState: State): Unit = {
