@@ -27,5 +27,5 @@ message SamplingResponse {
     int32 upperbound = 2;
   }
   bool isChecked = 1;
-  map<string, KeyRange> partition = 2;
+  map<int32, KeyRange> partition = 2;
 }

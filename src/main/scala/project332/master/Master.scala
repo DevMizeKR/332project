@@ -64,9 +64,49 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     this.synchronized {
       count += 1
       this.data :+ data.getBytes().grouped(10).toList
-      if (count == numClient)
+      if (count == numClient) {
         Master.logger.info(s"Received All Data from $count clients.")
+        calculatePivot()
+      }
     }
+  }
+
+  // function that calculate pivot using samples
+  private def calculatePivot(): Unit = {
+    val mindata: Array[Byte] = Array(Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue) // 바이트 타입의 최솟값
+    val maxdata: Array[Byte] = Array(Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue)
+    val sortedSample = this.data.sorted(KeyOrdering)
+
+    val partition: Map[Int,(Array[Byte], Array[Byte])] = Map.empty
+    if (this.workers.length == 1) { // slave 하나밖에 없으면 그냥 범위에 냅다 최소~최대 전부 할당  
+      partition.put(workers(0).id, (mindata, maxdata))
+    } else {
+      val range: Int = sortedSample.length / this.workers.length
+      val remainder: Int = sortedSample.length % this.workers.length // 나머지 계산
+
+      var loop = 0
+      for (worker <- this.workers.toList) {
+        // 각 워커가 처리할 데이터의 범위 계산
+        val startIdx = loop * range + Math.min(loop, remainder) // 시작 인덱스
+        val endIdx = startIdx + range + (if (loop < remainder) 1 else 0) // 끝 인덱스
+
+        // 데이터의 시작과 끝 인덱스를 사용하여 슬레이브에 할당
+        if (loop == 0) {
+          val bytes = sortedSample(endIdx).clone()
+          bytes.update(9, bytes(9).-(1).toByte)
+          partition.put(worker.id, (mindata, bytes))
+        } else if (loop == this.slaves.length - 1) {
+          partition.put(worker.id, (sortedSample(startIdx), maxdata))
+        } else {
+          val bytes = sortedSample(endIdx).clone()
+          bytes.update(9, bytes(9).-(1).toByte)
+          partition.put(worker.id, (sortedSample(startIdx), bytes))
+        }
+        loop += 1
+      }
+    }
+    this.idToKeyRanges = partition.map(x=>(x._1, KeyRanges(lowerBound = ByteString.copyFrom(x._2._1), upperBound = ByteString.copyFrom(x._2._2))))
+    this.sampledKeyData = Nil
   }
 
   private def addWorker(ipAddress: String): Unit = {
