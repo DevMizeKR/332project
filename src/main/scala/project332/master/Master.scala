@@ -6,6 +6,7 @@ import com.google.protobuf.ByteString
 import java.util.concurrent.CountDownLatch
 import io.grpc.{Server, ServerBuilder}
 
+import scala.collection.mutable
 import scala.collection.mutable.Map
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,6 +15,8 @@ import project332.common.Common.{findRandomPort, getLocalIP}
 import project332.common.KeyOrdering
 import project332.connection.{CommunicateGrpc, ConnectionRequest, ConnectionResponse}
 import project332.connection.{SamplingRequest, SamplingResponse}
+import project332.connection.{ShufflingServerRequest, ShufflingServerResponse}
+import project332.connection.{MergingCompletedRequest, MergingCompletedResponse}
 import project332.connection.SamplingResponse.KeyRange
 
 object Master extends LazyLogging {
@@ -40,6 +43,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
   var currentState: State = InitialState
   var sampleData: List[Array[Byte]] = Nil
   var idKeyRange: Map[Int, KeyRange] = Map.empty
+  var idAddress: Map[Int, String] = Map.empty
   var count: Int = 0
 
   // 서버 시작
@@ -111,7 +115,8 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       if (this.workers.count(_.gotData) == numClient) {
         Master.logger.info(s"Received All Data from clients.")
         createPivot()
-        Future { stateTransition(SortingState) }
+        stateTransition(SortingState)
+        stateTransition(ShufflingState)
       }
     }
   }
@@ -151,6 +156,31 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     Master.logger.info(s"Check Key Range\n ${partition(1)}")
   }
 
+
+  def setShuffleServerPort(workerId: Int, serverPort: Int): Unit = {
+    this.synchronized {
+      workers.find(p => p.id == workerId) match {
+        case None => logger.error("id does not match!")
+        case Some(value) =>
+          assert(value.serverPort == 0)
+          value.serverPort = serverPort
+      }
+      if (this.workers.count(_.serverPort != 0) == this.numClient) {
+        logger.info("we receive all the worker port")
+        setIdToEndpoint()
+        //transition to merge phase
+      }
+    }
+
+    def setIdToEndpoint(): Unit = {
+      for (worker <- workers) {
+        val ipPort = s"${worker.ip}:${worker.serverPort}"
+        idAddress += (worker.id -> ipPort)
+      }
+      this.idAddress = idAddress
+    }
+  }
+
   // gRPC 서비스 구현
   private class CommunicateImpl extends CommunicateGrpc.Communicate {
     override def connecting(req: ConnectionRequest): Future[ConnectionResponse] = {
@@ -172,10 +202,23 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       val reply = SamplingResponse(isChecked = true, idKeyRange = idKeyRange.toMap)
       Future.successful(reply)
     }
+
+    override def shufflingReady(request: ShufflingServerRequest): Future[ShufflingServerResponse] = {
+      logger.info(s"Set shuffling server port from ${request.id}, server port: ${request.port}")
+      setShuffleServerPort(request.id, request.port)
+      clientLatch.countDown()
+      clientLatch.await()
+      val response = ShufflingServerResponse(isChecked = true, idPort = idAddress.toMap)
+      Future.successful(response)
+    }
   }
 }
 
 class WorkerClient(val id: Int, val ip: String) {
+  var serverPort: Int = 0
   var gotData: Boolean = false
+  var numFile: Int = 0
+  var gotNumFile: Boolean = false
+  var ended: Boolean = false
   override def toString: String = ip
 }

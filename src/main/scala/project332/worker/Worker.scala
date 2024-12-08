@@ -2,19 +2,24 @@ package project332.worker
 
 import com.typesafe.scalalogging.LazyLogging
 import com.google.protobuf.ByteString
-import io.grpc.{ManagedChannel, ManagedChannelBuilder}
+import io.grpc.stub.StreamObserver
+import io.grpc.{ManagedChannel, ManagedChannelBuilder, Server, ServerBuilder}
 
 import java.io.{File, FileOutputStream}
+import java.util.concurrent.CountDownLatch
 import scala.io.Source
 import scala.util.{Failure, Success, Random}
 import scala.collection.mutable
 import scala.collection.mutable.Map
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.{Await, Future, Promise, ExecutionContext}
 import scala.concurrent.ExecutionContext.Implicits.global
-import project332.common.Common.getLocalIP
+import project332.common.Common.{getLocalIP, findRandomPort}
 import project332.common.KeyOrdering
-import project332.connection.{CommunicateGrpc, ConnectionRequest, ConnectionResponse, SamplingRequest, SamplingResponse}
+import project332.connection.{CommunicateGrpc, ConnectionRequest, SamplingRequest}
+import project332.connection.{ShufflingServerRequest, ShufflingCompletedRequest}
+import project332.connection.{ShuffleGrpc, ShufflingRequest, ShufflingResponse}
+import project332.connection.{MergingCompletedRequest, MergingCompletedResponse}
 import project332.connection.SamplingResponse.KeyRange
 
 object Worker extends LazyLogging {
@@ -52,6 +57,9 @@ class Worker(private val channel: ManagedChannel,
             ) extends LazyLogging {
   val done: Promise[Boolean] = Promise[Boolean]()
   var idKeyRange: mutable.Map[Int, KeyRange] = mutable.Map.empty
+  var idAddress: Map[Int, String] = Map.empty
+  var workerServer: Server = _
+  var serverPort: Int = 0
   var id: Int = 0
 
   def start(): Future[Boolean] = {
@@ -82,7 +90,7 @@ class Worker(private val channel: ManagedChannel,
     val data = inputDirectories.map(new File(_))
       .flatMap(_.listFiles.filter(_.isFile))
       .map(Source.fromFile(_))
-      .flatMap(_.grouped(100).toList.map(x => x.dropRight(90)).take(1000).flatMap(x => x.map(y => y.toByte)).toArray)
+      .flatMap(_.grouped(100).toList.map(x => x.dropRight(90)).take(10000).flatMap(x => x.map(y => y.toByte)).toArray)
     data
   }
 
@@ -142,5 +150,144 @@ class Worker(private val channel: ManagedChannel,
       outputStream.write(rs._2)
     }
     outputStream.close()
+  }
+
+  def startShufflingServer(): Unit={
+    this.serverPort = findRandomPort
+    workerServer = ServerBuilder.forPort(this.serverPort)
+      .addService(ShuffleGrpc.bindService(new ShuffleImpl, ExecutionContext.global))
+      .build
+      .start()
+
+    logger.info(s"Shuffling Server is started at port ${this.serverPort}")
+  }
+
+  def stopShufflingServer(): Unit={
+    if (workerServer != null) {
+      workerServer.shutdown()
+      logger.info("Shuffling Server stopped.")
+    }
+  }
+
+  def setShufflingServer(): Unit={
+    val request = ShufflingServerRequest(id = this.id, port = this.serverPort)
+    val response = stub.shufflingReady(request)
+
+    response.onComplete {
+      case Success(value) => {
+        this.idAddress = mutable.Map.from(value.idPort)
+        Worker.logger.info(s"Endpoint: ${this.idAddress}")
+        shuffle()
+        shufflingCompleted()
+      }
+      case Failure(e) =>
+        Worker.logger.error(s"SetShufflingServer failed: $e")
+    }
+  }
+
+  def shuffle(): Unit={
+    for((targetId, targetEndpoint) <- this.idAddress.filter(_._1 != this.id)) {
+      logger.info(s"Sending files from ${this.id} to $targetId")
+      val filesToSend = getAllFilesOfId(targetId)
+
+      val finishSignal = new CountDownLatch(1)
+      var sendSignal = new CountDownLatch(1)
+
+      val splittedEndpoint = targetEndpoint.split(':')
+      val shufflingChannel = ManagedChannelBuilder
+        .forAddress(splittedEndpoint(0), splittedEndpoint(1).toInt)
+        .usePlaintext()
+        .build()
+      val shufflingStub = ShuffleGrpc.stub(shufflingChannel)
+      val responseObserver = shufflingStub.shuffling(new StreamObserver[ShufflingResponse] {
+        override def onNext(value: ShufflingResponse): Unit = sendSignal.countDown()
+
+        override def onError(error: Throwable): Unit = {
+          logger.error(s"Send files faild: $error")
+          finishSignal.countDown()
+        }
+
+        override def onCompleted(): Unit = {
+          finishSignal.countDown()
+        }
+      })
+
+      for (file<-filesToSend) {
+        val source = Source.fromFile(file)
+        val sourceFile = source.toList.map(x=>x.toByte).toArray
+        responseObserver.onNext(ShufflingRequest(data = ByteString.copyFrom(sourceFile)))
+
+        sendSignal.await()
+        sendSignal = new CountDownLatch(1)
+      }
+
+      responseObserver.onCompleted()
+      finishSignal.await()
+      logger.info(s"Finish sending files from worker id: ${this.id} to worker id: $targetId")
+    }
+  }
+
+  def saveShuffledFile(file: Array[Byte]): Unit = {
+    val filename = s"${this.outputDirectory}/worker_s${this.id}_${Random.alphanumeric.take(10).mkString}"
+    logger.info(s"save received file: $filename")
+    val outputFile = new File(filename)
+    val outputStream = new FileOutputStream(outputFile)
+    outputStream.write(file)
+    outputStream.close()
+  }
+
+  private class ShuffleImpl extends ShuffleGrpc.Shuffle {
+    override def shuffling(responseObserver: StreamObserver[ShufflingResponse]): StreamObserver[ShufflingRequest] = {
+      val requestObserver = new StreamObserver[ShufflingRequest] {
+        override def onNext(value: ShufflingRequest): Unit={
+          saveShuffledFile(value.data.toByteArray)
+          responseObserver.onNext(ShufflingResponse(isChecked = true))
+        }
+        override def onError(error: Throwable): Unit = {
+          logger.error(s"Response to SendFiles failed: $error")
+        }
+        override def onCompleted(): Unit = {
+          responseObserver.onCompleted()
+        }
+      }
+
+      requestObserver
+    }
+  }
+
+  def shufflingCompleted(): Unit = {
+    var num = getNumberOfFiles
+    val request = ShufflingCompletedRequest(id = this.id, num = num)
+    val response = stub.shufflingCompleted(request)
+
+    response.onComplete {
+      case Success(r) => startMerging(r)
+      case Failure(e) => logger.error(s"ShufflingCompleted failed: $e")
+    }
+  }
+
+  def getAllFilesOfId(id: Int): List[File]={
+    val getFiles = new File(outputDirectory)
+    getFiles
+      .listFiles()
+      .filter(_.isFile)
+      .filter(_.getName.startsWith(s"$id"))
+      .toList
+  }
+
+  def getNumberOfFiles: Int = {
+    inputDirectories
+      .map(new File(_))
+      .flatMap(_.listFiles.filter(_.isFile))
+      .size
+  }
+
+  def getTargetedFiles(): List[File] = {
+    val getFiles = new File(outputDirectory)
+    getFiles
+      .listFiles()
+      .filter(_.isFile())
+      .filter(_.getName.startsWith(s"${this.id}_"))
+      .toList
   }
 }

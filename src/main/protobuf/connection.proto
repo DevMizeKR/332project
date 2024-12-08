@@ -5,6 +5,9 @@ package project332;
 service Communicate {
   rpc Connecting (ConnectionRequest) returns (ConnectionResponse) {}
   rpc Sampling (SamplingRequest) returns (SamplingResponse) {}
+  rpc ShufflingReady (ShufflingServerRequest) returns (ShufflingServerResponse) {}
+  rpc ShufflingCompleted (ShufflingCompletedRequest) returns (ShufflingCompletedResponse) {}
+  rpc MergingCompleted (MergingCompletedRequest) returns (MergingCompletedResponse) {}
 }
 
 message ConnectionRequest {
@@ -28,4 +31,45 @@ message SamplingResponse {
   }
   bool isChecked = 1;
   map<int32, KeyRange> idKeyRange = 2;
+}
+
+message ShufflingServerRequest {
+  int32 id = 1;
+  int32 port = 2;
+}
+
+message ShufflingServerResponse {
+  bool isChecked = 1;
+  map<int32, string> idPort = 2;
+}
+
+message  ShufflingCompletedRequest {
+  int32 id = 1;
+  int32 num = 2;
+}
+
+message  ShufflingCompletedResponse {
+  bool  success = 1;
+  int32 startIndex = 2;
+  int32 length = 3;
+}
+
+message MergingCompletedRequest {
+  int32 id = 1;
+}
+
+message MergingCompletedResponse {
+  bool  success = 1;
+}
+
+service Shuffle {
+  rpc Shuffling (stream ShufflingRequest) returns (stream ShufflingResponse) {}
+}
+
+message ShufflingRequest {
+  bytes data = 1;
+}
+
+message ShufflingResponse {
+  bool isChecked = 1;
 }
