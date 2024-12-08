@@ -29,7 +29,7 @@ object Worker extends LazyLogging {
     if (path.isEmpty) { Worker.logger.info("File Path is Empty."); client.shutdown() }
     else {
       Worker.logger.info("Try to send Data to Master.")
-      val fileSource = Source.fromFile(args(1))
+      val fileSource = Source.fromFile(args(0))
       val keyList = fileSource.grouped(100).map(x => x.dropRight(90)).take(10000).toString()
 
       try { client.sendData(keyList) }

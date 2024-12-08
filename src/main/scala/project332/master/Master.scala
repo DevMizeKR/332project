@@ -26,7 +26,7 @@ object Master extends LazyLogging {
 class Master(executionContext: ExecutionContext, val numClient: Int, val port: Int) extends LazyLogging {
   private[this] var server: Server = null
   private val clientLatch: CountDownLatch = new CountDownLatch(numClient)
-  var workers: Vector[WorkerClient] = Vector.empty
+  private var workers: Vector[WorkerClient] = Vector.empty
   var data: List[Array[Byte]] = Nil
   var count: Int = 0
 
@@ -82,6 +82,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     override def connecting(req: ConnectionRequest): Future[ConnectionResponse] = {
       Master.logger.info(s"Handshake from ${req.ipAddress}")
       clientLatch.countDown()
+      addWorker(req.ipAddress)
       clientLatch.await()
 
       val reply = ConnectionResponse(isConnected = true, id = clientLatch.getCount.toInt)

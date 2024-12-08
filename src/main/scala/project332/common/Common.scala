@@ -18,3 +18,14 @@ object Common {
     availablePort
   }
 }
+
+object KeyOrdering extends Ordering[Array[Byte]] {
+  override def compare(x: Array[Byte], y: Array[Byte]): Int = {
+    assert(x.length == y.length)
+    for (i <- 0 to 9) {
+      if (x(i) > y(i)) return 1
+      else if (x(i) < y(i)) return -1
+    }
+    0
+  }
+}
