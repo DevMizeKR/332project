@@ -99,6 +99,86 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       Future.successful(reply)
     }
   }
+
+  private def createPartition(): Unit = {
+    val mindata: Array[Byte] = Array(Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue) // 바이트 타입의 최솟값
+    val maxdata: Array[Byte] = Array(Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue)
+    val sortedKeyData = this.sampledKeyData.sorted(KeyOrdering)
+
+    val partition: Map[Int,(Array[Byte], Array[Byte])] = Map.empty
+    if (this.slaves.length == 1) { // slave 하나밖에 없으면 그냥 범위에 냅다 최소~최대 박음
+      partition.put(slaves(0).id, (mindata, maxdata))
+    } else {
+      val range: Int = sortedKeyData.length / this.slaves.length
+      var loop = 0
+      for (slave <- this.slaves.toList) {
+        if (loop == 0) { // 첫번째 pivot 결정
+          val bytes = sortedKeyData((loop + 1) * range).clone() // 밑에서 update로 수정할거니까 copy해서 씀
+          bytes.update(9, bytes(9).-(1).toByte) // 10바이트짜리 키의 마지막거에서 1바이트 줄여서 겹치는거 방지
+          partition.put(slave.id, (mindata, bytes))
+        } else if (loop == this.slaves.length - 1) { // 마지막 pivot 계산
+          partition.put(slave.id, (sortedKeyData(loop * range), maxdata))
+        } else {
+          val bytes = sortedKeyData((loop + 1) * range).clone()
+          bytes.update(9, bytes(9).-(1).toByte)
+          partition.put(slave.id, (sortedKeyData(loop * range), bytes))
+        }
+        loop +=1
+      }
+    }
+    this.idToKeyRanges = partition.map(x=>(x._1, KeyRanges(lowerBound = ByteString.copyFrom(x._2._1), upperBound = ByteString.copyFrom(x._2._2))))
+    // We do not need sampled key data anymore, so it can be garbage collected
+    this.sampledKeyData = Nil
+  }
+
+  // function that receive sample from workers
+  private def receiveSample(id: Int, sampledData : Array[Byte]): Unit = {
+    this.synchronized({
+      val slave = this.slaves.find(_.id == id).get
+      assert(!slave.gotSampledData)
+      slave.gotSampledData = true
+
+      this.sampledKeyData = this.sampledKeyData ++ sampledData.grouped(10).toList
+      if (this.slaves.count(_.gotSampledData) == this.numClient) {
+        logger.info("we receive all the sampled data")
+        calculatePivot()
+        transitionToSorting()
+        transitionToShuffling()
+      }
+    })
+  }
+
+  // function that calculate pivot using samples
+  private def calculatePivot(): Unit = {
+    val mindata: Array[Byte] = Array(Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue, Byte.MinValue) // 바이트 타입의 최솟값
+    val maxdata: Array[Byte] = Array(Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue)
+    val sortedKeyData = this.sampledKeyData.sorted(KeyOrdering)
+
+    val partition: Map[Int,(Array[Byte], Array[Byte])] = Map.empty
+    if (this.slaves.length == 1) { // slave 하나밖에 없으면 그냥 범위에 냅다 최소~최대 박음
+      partition.put(slaves(0).id, (mindata, maxdata))
+    } else {
+      val range: Int = sortedKeyData.length / this.slaves.length
+      var loop = 0
+      for (slave <- this.slaves.toList) {
+        if (loop == 0) { // 첫번째 pivot 결정
+          val bytes = sortedKeyData((loop + 1) * range).clone() // 밑에서 update로 수정할거니까 copy해서 씀
+          bytes.update(9, bytes(9).-(1).toByte) // 10바이트짜리 키의 마지막거에서 1바이트 줄여서 겹치는거 방지
+          partition.put(slave.id, (mindata, bytes))
+        } else if (loop == this.slaves.length - 1) { // 마지막 pivot 계산
+          partition.put(slave.id, (sortedKeyData(loop * range), maxdata))
+        } else {
+          val bytes = sortedKeyData((loop + 1) * range).clone()
+          bytes.update(9, bytes(9).-(1).toByte)
+          partition.put(slave.id, (sortedKeyData(loop * range), bytes))
+        }
+        loop +=1
+      }
+    }
+    this.idToKeyRanges = partition.map(x=>(x._1, KeyRanges(lowerBound = ByteString.copyFrom(x._2._1), upperBound = ByteString.copyFrom(x._2._2))))
+    // We do not need sampled key data anymore, so it can be garbage collected
+    this.sampledKeyData = Nil
+  }
 }
 
 class WorkerClient(val id: Int, val ip: String) {
