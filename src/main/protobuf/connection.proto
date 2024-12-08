@@ -17,15 +17,15 @@ message ConnectionResponse {
 }
 
 message SamplingRequest {
-  string data = 1;
-  string ipAddress = 2;
+  int32 id = 1;
+  bytes data = 2;
 }
 
 message SamplingResponse {
   message KeyRange {
-    int32 lowerbound = 1;
-    int32 upperbound = 2;
+    bytes lowerBound = 1;
+    bytes upperBound = 2;
   }
   bool isChecked = 1;
-  map<string, KeyRange> partition = 2;
+  map<int32, KeyRange> idKeyRange = 2;
 }
