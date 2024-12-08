@@ -16,6 +16,7 @@ libraryDependencies += "io.grpc" % "grpc-protobuf" % "1.65.1"
 libraryDependencies += "io.grpc" % "grpc-stub" % "1.65.1"
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
+libraryDependencies += "commons-cli" % "commons-cli" % "1.4"
 
 Compile / PB.targets := Seq(
   scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"

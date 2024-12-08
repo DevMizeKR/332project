@@ -17,8 +17,8 @@ message ConnectionResponse {
 }
 
 message SamplingRequest {
-  string data = 1;
-  string ipAddress = 2;
+  int32 id = 1;
+  bytes data = 2;
 }
 
 message SamplingResponse {

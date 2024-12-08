@@ -1,11 +1,14 @@
 package project332.master
 
 import com.typesafe.scalalogging.LazyLogging
+import com.google.protobuf.ByteString
+
 import java.util.concurrent.CountDownLatch
 import io.grpc.{Server, ServerBuilder}
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.mutable.Map
-
+import scala.collection.mutable
 import project332.common.Common.{findRandomPort, getLocalIP}
 import project332.common.KeyOrdering
 import project332.connection.{CommunicateGrpc, ConnectionRequest, ConnectionResponse}
@@ -32,7 +35,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
   private var workers: Vector[WorkerClient] = Vector.empty
   var data: List[Array[Byte]] = Nil
   var count: Int = 0
-  var pivotMapping: Map[Int, KeyRange] = Map.empty
+  var pivotMapping: mutable.Map[Int, KeyRange] = mutable.Map.empty
 
   // 서버 시작
   private def start(): Unit = {
@@ -109,7 +112,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
         loop += 1
       }
     }
-    this.pivotMapping = partition.map(x => (x._1, KeyRange(lowerBound = ByteString.copyFrom(x._2._1), upperBound = ByteString.copyFrom(x._2._2))))
+    this.pivotMapping = partition.map(x => (x._1, KeyRange(lowerbound = ByteString.copyFrom(x._2._1), upperbound = ByteString.copyFrom(x._2._2))))
     this.data = Nil
   }
 
@@ -139,7 +142,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       addData(req.data)
       clientLatch.await()
 
-      val reply = SamplingResponse(isChecked = true, partition = self.pivotMapping.toMap)
+      val reply = SamplingResponse(isChecked = true, partition = pivotMapping.toMap)
       Future.successful(reply)
     }
   }
@@ -151,7 +154,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       assert(!worker.gotSampledData)
       worker.gotSampledData = true
 
-      this.sampledKeyData = this.sampledKeyData ++ sampledData.grouped(10).toList
+      this.data = this.data ++ sampledData.grouped(10).toList
       if (this.workers.count(_.gotSampledData) == this.numClient) {
         logger.info("we receive all the sampled data")
         calculatePivot()
@@ -164,4 +167,5 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
 
 class WorkerClient(val id: Int, val ip: String) {
   override def toString: String = ip
+  var gotSampledData: Boolean = false
 }
