@@ -29,7 +29,10 @@ object Worker extends LazyLogging {
     val client = Worker(masterIP(0), masterIP(1).toInt, inputDirectories)
 
     try { client.initialConnect() }
-    catch { case e: Exception => client.shutdown() }
+    catch { case e: Exception =>
+      client.shutdown()
+      Worker.logger.info(s"$e")
+    }
   }
 
   def apply(ip: String, port: Int, inputDirectories: Array[String]): Worker = {
