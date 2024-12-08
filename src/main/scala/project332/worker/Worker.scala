@@ -64,6 +64,13 @@ class Worker(private val channel: ManagedChannel,
     }
   }
 
+  def handleConnectionResponse(response: ConnectionResponse) : Unit = {
+    assert(response.isConnected)
+    this.id = response.id
+    logger.info("Successfully connected. slave id : " + this.id)
+    sendSample(makeSample)
+  }
+
   def sendData(data: String): Unit = {
     val request = SamplingRequest(ipAddress = getLocalIP, data = data)
     try {
