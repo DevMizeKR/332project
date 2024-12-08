@@ -86,7 +86,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       val remainder: Int = sortedSample.length % this.workers.length // 나머지 계산
 
       var loop = 0
-      for (worker <- this.workers.toList) {
+      for (worker <- this.workers.toList) {//ffgfg
         // 각 워커가 처리할 데이터의 범위 계산
         val startIdx = loop * range + Math.min(loop, remainder) // 시작 인덱스
         val endIdx = startIdx + range + (if (loop < remainder) 1 else 0) // 끝 인덱스
