@@ -94,7 +94,6 @@ class Worker(private val channel: ManagedChannel,
       case Success(value) =>
         if (value.isChecked) {
           this.idKeyRange = mutable.Map.from(value.idKeyRange.map(x => (x._1, new KeyRange(x._2.lowerBound, x._2.upperBound))))
-          Worker.logger.info(s"Data : $value")
         } else {
           Worker.logger.warn("Partitioning Failed.")
         }
