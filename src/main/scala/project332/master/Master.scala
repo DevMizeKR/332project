@@ -9,7 +9,7 @@ import io.grpc.{Server, ServerBuilder}
 import scala.collection.mutable.Map
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
-import project332.master.States._
+import project332.common.States._
 import project332.common.Common.{findRandomPort, getLocalIP}
 import project332.common.KeyOrdering
 import project332.connection.{CommunicateGrpc, ConnectionRequest, ConnectionResponse}
@@ -170,9 +170,4 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
 class WorkerClient(val id: Int, val ip: String) {
   var gotData: Boolean = false
   override def toString: String = ip
-}
-
-object States extends Enumeration {
-  type State = Value
-  val InitialState, ConnectingState, SamplingState, SortingState, ShufflingState, MergingState, EndState = Value
 }

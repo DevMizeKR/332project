@@ -29,3 +29,8 @@ object KeyOrdering extends Ordering[Array[Byte]] {
     0
   }
 }
+
+object States extends Enumeration {
+  type State = Value
+  val InitialState, ConnectingState, SamplingState, SortingState, ShufflingState, MergingState, EndState = Value
+}
