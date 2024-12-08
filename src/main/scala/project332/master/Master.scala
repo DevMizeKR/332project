@@ -29,6 +29,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
   private var workers: Vector[WorkerClient] = Vector.empty
   var data: List[Array[Byte]] = Nil
   var count: Int = 0
+  var pivotMapping: Map[Int, KeyRange] = Map.empty
 
   // 서버 시작
   private def start(): Unit = {
@@ -105,8 +106,8 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
         loop += 1
       }
     }
-    this.idToKeyRanges = partition.map(x=>(x._1, KeyRanges(lowerBound = ByteString.copyFrom(x._2._1), upperBound = ByteString.copyFrom(x._2._2))))
-    this.sampledKeyData = Nil
+    this.pivotMapping = partition.map(x=>(x._1, KeyRange(lowerBound = ByteString.copyFrom(x._2._1), upperBound = ByteString.copyFrom(x._2._2))))
+    this.data = Nil
   }
 
   private def addWorker(ipAddress: String): Unit = {
@@ -135,7 +136,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       addData(req.data)
       clientLatch.await()
 
-      val reply = SamplingResponse(isChecked = true)
+      val reply = SamplingResponse(isChecked = true, partition = self.pivotMapping.toMap)
       Future.successful(reply)
     }
   }

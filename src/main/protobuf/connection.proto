@@ -23,8 +23,8 @@ message SamplingRequest {
 
 message SamplingResponse {
   message KeyRange {
-    int32 lowerbound = 1;
-    int32 upperbound = 2;
+    bytes lowerbound = 1;
+    bytes upperbound = 2;
   }
   bool isChecked = 1;
   map<int32, KeyRange> partition = 2;
