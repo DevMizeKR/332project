@@ -88,19 +88,19 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     if (this.workers.length == 1) {
       partition.put(workers(0).id, (mindata, maxdata))
     } else {
-      val range: Int = sortedKeyData.length / this.workers.length
+      val range: Int = sortedSample.length / this.workers.length
       var loop = 0
       for (worker <- this.workers.toList) {
         if (loop == 0) {
-          val bytes = sortedKeyData((loop + 1) * range).clone()
+          val bytes = sortedSample((loop + 1) * range).clone()
           bytes.update(9, bytes(9).-(1).toByte)
           partition.put(worker.id, (mindata, bytes))
         } else if (loop == this.workers.length - 1) {
-          partition.put(worker.id, (sortedKeyData(loop * range), maxdata))
+          partition.put(worker.id, (sortedSample(loop * range), maxdata))
         } else {
-          val bytes = sortedKeyData((loop + 1) * range).clone()
+          val bytes = sortedSample((loop + 1) * range).clone()
           bytes.update(9, bytes(9).-(1).toByte)
-          partition.put(worker.id, (sortedKeyData(loop * range), bytes))
+          partition.put(worker.id, (sortedSample(loop * range), bytes))
         } 
         loop +=1
       }
