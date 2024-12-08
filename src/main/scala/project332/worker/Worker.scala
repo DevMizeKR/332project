@@ -28,8 +28,7 @@ object Worker extends LazyLogging {
     Worker.logger.info(s"Try to connect with Master : ${masterIP(0)}")
     val client = Worker(masterIP(0), masterIP(1).toInt, inputDirectories)
 
-    try { client.initialConnect() }
-    catch { case e: Exception => client.shutdown() }
+    client.initialConnect()
   }
 
   def apply(ip: String, port: Int, inputDirectories: Array[String]): Worker = {
