@@ -72,7 +72,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
       count += 1
       this.data :+ data.getBytes().grouped(10).toList
       if (count == numClient) {
-        Master.logger.info(s"Received All Data from $count clients.")
+        Master.logger.info(s"Received All Data from $count clients: total ${this.data.length}")
         calculatePivot()
       }
     }
@@ -98,9 +98,11 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
           val bytes = sortedSample(endIdx - 1).clone()
           bytes.update(9, bytes(9).-(1).toByte)
           partition.put(worker.id, (mindata, bytes))
-        } else if (loop == this.workers.length - 1 || endIdx == sortedSample.length) {
+        }
+        else if (loop == this.workers.length - 1 || endIdx == sortedSample.length) {
           partition.put(worker.id, (sortedSample(startIdx), maxdata))
-        } else {
+        }
+        else {
           val bytes = sortedSample(endIdx - 1).clone()
           bytes.update(9, bytes(9).-(1).toByte)
           partition.put(worker.id, (sortedSample(startIdx), bytes))
