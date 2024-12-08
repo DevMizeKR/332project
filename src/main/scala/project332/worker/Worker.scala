@@ -82,7 +82,7 @@ class Worker(private val channel: ManagedChannel,
       .flatMap(_.listFiles.filter(_.isFile))
       .map(Source.fromFile(_))
       .flatMap(_.grouped(100).toList.map(x => x.dropRight(90)).take(10).flatMap(x => x.map(y => y.toByte)).toArray)
-    Worker.logger.info(s"Data : ${data.mkString("Array(", ", ", ")")}")
+    Worker.logger.info(s"Data : ${data}")
     data
   }
 
