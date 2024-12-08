@@ -6,7 +6,7 @@ import io.grpc.{ManagedChannel, ManagedChannelBuilder, StatusRuntimeException}
 
 import scala.io.Source
 import scala.concurrent.duration._
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{Future, Promise, Await}
 import scala.util.{Failure, Success}
 import scala.language.postfixOps
 import project332.common.Common.getLocalIP
@@ -27,8 +27,9 @@ object Worker extends LazyLogging {
     val inputDirectories = Array(args.lastOption.get)
     Worker.logger.info(s"Try to connect with Master : ${masterIP(0)}")
     val client = Worker(masterIP(0), masterIP(1).toInt, inputDirectories)
-
-    client.initialConnect()
+    val done = client.initialConnect()
+    Await.result(done, Duration.Inf)
+    client.shutdown()
   }
 
   def apply(ip: String, port: Int, inputDirectories: Array[String]): Worker = {
