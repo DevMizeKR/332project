@@ -4,6 +4,7 @@ package project332;
 
 service Communicate {
   rpc Connecting (ConnectionRequest) returns (ConnectionResponse) {}
+  rpc Sampling (SamplingRequest) returns (SamplingResponse) {}
 }
 
 message ConnectionRequest {
@@ -13,4 +14,13 @@ message ConnectionRequest {
 message ConnectionResponse {
   bool isConnected = 1;
   int32 id = 2;
+}
+
+message SamplingRequest {
+  string data = 1;
+  string ipAddress = 2;
+}
+
+message SamplingResponse {
+  bool isChecked = 1;
 }
