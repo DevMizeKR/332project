@@ -90,19 +90,21 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     } else {
       val range: Int = sortedSample.length / this.workers.length
       var loop = 0
-      for (worker <- this.workers.toList) {
+      for ((worker, loop) <- this.workers.zipWithIndex) {
+        val startIdx = loop * range
+        val endIdx = Math.min((loop + 1) * range, sortedSample.length)
+
         if (loop == 0) {
-          val bytes = sortedSample((loop + 1) * range).clone()
+          val bytes = sortedSample(endIdx - 1).clone()
           bytes.update(9, bytes(9).-(1).toByte)
           partition.put(worker.id, (mindata, bytes))
-        } else if (loop == this.workers.length - 1) {
-          partition.put(worker.id, (sortedSample(loop * range), maxdata))
+        } else if (loop == this.workers.length - 1 || endIdx == sortedSample.length) {
+          partition.put(worker.id, (sortedSample(startIdx), maxdata))
         } else {
-          val bytes = sortedSample((loop + 1) * range).clone()
+          val bytes = sortedSample(endIdx - 1).clone()
           bytes.update(9, bytes(9).-(1).toByte)
-          partition.put(worker.id, (sortedSample(loop * range), bytes))
-        } 
-        loop +=1
+          partition.put(worker.id, (sortedSample(startIdx), bytes))
+        }
       }
     }
     

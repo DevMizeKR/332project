@@ -87,10 +87,10 @@ class Worker(private val channel: ManagedChannel,
   // worker send sample to master
   def sendSample(data: Array[Byte]) : Unit = {
     val request = SamplingRequest(id = this.id, data = ByteString.copyFrom(data))
-    Worker.logger.info("successfully send sample")
     val response = stub.sampling(request)
     response.onComplete {
       case Success(value) => {
+        Worker.logger.info("successfully send sample")
         handleSamplingResponse(value)
         //sortFilesWithKeyRanges()
         //startGrpcServer()
