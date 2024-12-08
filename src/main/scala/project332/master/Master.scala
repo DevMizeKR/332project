@@ -110,11 +110,12 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     this.data = Nil
   }
 
-  private def addWorker(ipAddress: String): Unit = {
+  private def addWorker(ipAddress: String): Int = {
     this.synchronized {
       this.workers = this.workers :+ new WorkerClient(this.workers.length, ipAddress)
       if (this.workers.length == this.numClient)
         Master.logger.info(s"${this.workers.mkString(", ")}")
+      this.workers.length
     }
   }
 
