@@ -37,11 +37,11 @@ cd target/universal/stage/bin
 
 2. worker
 ```shell
-./worker <master IP> -I <input directory> -O <output directory>
+./worker <Master IP>:<Master Port> <Input Number> <Input Directory Lists> <Output Directory>
 ```
-연결할 모든 worker에 대해 각각 실행, 인자로 앞서 master에서 출력된 ip 주소(포트를 포함)와 입력 데이터의 경로, 출력 데이터를 저장할 경로 전달. 아래와 같이 사용. 
+연결할 모든 worker에 대해 각각 실행, 인자로 앞서 master에서 출력된 ip 주소 및 포트와 입력 데이터 경로의 수, 입력 데이터의 경로들 및 출력 데이터를 저장할 경로 전달. 아래와 같이 사용. 
 ```shell
-./worker 10.1.25.21:33465 -I /home/dataset/big -O /home/indigo/output
+./worker 10.1.25.21:33465 1 /home/dataset/big /home/indigo/output
 ```
 모든 worker에서 실행시 master 실행창에는 연결된 worker들의 ip 주소가 출력되고, 이후 실행이 완료될때까지 대기하면 worker 실행 파일에 전달한 출력 데이터 저장 경로에 정렬된 데이터 생성. 
 
