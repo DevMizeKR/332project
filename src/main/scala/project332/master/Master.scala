@@ -85,27 +85,27 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     val sortedSample = this.data.sorted(KeyOrdering)
 
     val partition: Map[Int, (Array[Byte], Array[Byte])] = Map.empty
-    if (this.workers.length == 1) { // slave 하나밖에 없으면 그냥 범위에 냅다 최소~최대 전부 할당  
+    if (this.workers.length == 1) {
       partition.put(workers(0).id, (mindata, maxdata))
     } else {
-      val range: Int = sortedKeyData.length / this.slaves.length
+      val range: Int = sortedKeyData.length / this.workers.length
       var loop = 0
-      for (slave <- this.slaves.toList) {
+      for (worker <- this.workers.toList) {
         if (loop == 0) {
           val bytes = sortedKeyData((loop + 1) * range).clone()
           bytes.update(9, bytes(9).-(1).toByte)
-          partition.put(slave.id, (mindata, bytes))
-        } else if (loop == this.slaves.length - 1) {
-          partition.put(slave.id, (sortedKeyData(loop * range), maxdata))
+          partition.put(worker.id, (mindata, bytes))
+        } else if (loop == this.workers.length - 1) {
+          partition.put(worker.id, (sortedKeyData(loop * range), maxdata))
         } else {
           val bytes = sortedKeyData((loop + 1) * range).clone()
           bytes.update(9, bytes(9).-(1).toByte)
-          partition.put(slave.id, (sortedKeyData(loop * range), bytes))
+          partition.put(worker.id, (sortedKeyData(loop * range), bytes))
         } 
         loop +=1
       }
-      }
     }
+    
     this.pivotMapping = partition.map(x => (x._1, KeyRange(lowerbound = ByteString.copyFrom(x._2._1), upperbound = ByteString.copyFrom(x._2._2))))
     this.data = Nil
   }
