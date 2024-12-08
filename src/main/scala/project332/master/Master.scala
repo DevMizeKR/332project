@@ -148,7 +148,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     }
 
     idKeyRange = partition.map(x=>(x._1, KeyRange(lowerBound = ByteString.copyFrom(x._2._1), upperBound = ByteString.copyFrom(x._2._2))))
-    Master.logger.info(s"Check Key Range\n ${partition(1)}, ${partition(2)}")
+    Master.logger.info(s"Check Key Range\n ${partition(0)}, ${partition(1)}")
   }
 
   // gRPC 서비스 구현
