@@ -122,6 +122,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     val maxData: Array[Byte] = Array(Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue, Byte.MaxValue)
     val sortedData = this.sampleData.sorted(KeyOrdering)
     val partition: Map[Int, (Array[Byte], Array[Byte])] = Map.empty
+
     if (this.workers.length == 1) { partition.put(workers(0).id, (minData, maxData))}
     else {
       val range = sortedData.length / this.workers.length
@@ -147,7 +148,7 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     }
 
     idKeyRange = partition.map(x=>(x._1, KeyRange(lowerBound = ByteString.copyFrom(x._2._1), upperBound = ByteString.copyFrom(x._2._2))))
-    Master.logger.info(s"Check Key Range\n $idKeyRange")
+    Master.logger.info(s"Check Key Range\n ${partition[1]}")
   }
 
   // gRPC 서비스 구현
