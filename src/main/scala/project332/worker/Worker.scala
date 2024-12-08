@@ -30,8 +30,8 @@ object Worker extends LazyLogging {
 
     try { client.initialConnect() }
     catch { case e: Exception =>
-      client.shutdown()
       Worker.logger.info(s"$e")
+      client.shutdown()
     }
   }
 
