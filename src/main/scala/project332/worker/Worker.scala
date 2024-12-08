@@ -82,7 +82,7 @@ class Worker(private val channel: ManagedChannel,
     val data = inputDirectories.map(new File(_))
       .flatMap(_.listFiles.filter(_.isFile))
       .map(Source.fromFile(_))
-      .flatMap(_.grouped(100).toList.map(x => x.dropRight(90)).take(10000).flatMap(x => x.map(y => y.toByte)).toArray)
+      .flatMap(_.grouped(100).toList.map(x => x.dropRight(90)).take(1000).flatMap(x => x.map(y => y.toByte)).toArray)
     data
   }
 
