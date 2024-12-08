@@ -27,7 +27,7 @@ object Worker extends LazyLogging {
     val inputDirectories = Array(args.lastOption.get)
     Worker.logger.info(s"Try to connect with Master : ${masterIP(0)}")
     val client = Worker(masterIP(0), masterIP(1).toInt, inputDirectories)
-    val done = client.initialConnect()
+    val done = client.start()
     Await.result(done, Duration.Inf)
     client.shutdown()
   }
@@ -43,8 +43,14 @@ class Worker(private val channel: ManagedChannel,
              private val stub: CommunicateGrpc.CommunicateStub,
              private val inputDirectories: Array[String]
             ) extends LazyLogging {
+  val done: Promise[Boolean] = Promise[Boolean]()
   var pivotMapping: Map[Int, KeyRange] = Map.empty
   var id: Int = 0
+
+  def start(): Future[Boolean] = {
+    Future { initialConnect() }
+    done.future
+  }
 
   def shutdown(): Unit = {
     channel.shutdown.awaitTermination(5, SECONDS)
