@@ -124,10 +124,10 @@ class Master(executionContext: ExecutionContext, val numClient: Int, val port: I
     override def connecting(req: ConnectionRequest): Future[ConnectionResponse] = {
       Master.logger.info(s"Handshake from ${req.ipAddress}")
       clientLatch.countDown()
-      addWorker(req.ipAddress)
+      var workerID = addWorker(req.ipAddress)
       clientLatch.await()
 
-      val reply = ConnectionResponse(isConnected = true, id = clientLatch.getCount.toInt)
+      val reply = ConnectionResponse(isConnected = true, id = workerID)
       Future.successful(reply)
     }
 
